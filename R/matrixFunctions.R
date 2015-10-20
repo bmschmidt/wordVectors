@@ -47,6 +47,7 @@ setMethod("show","VectorSpaceModel",function(object) {
 setMethod("plot","VectorSpaceModel",function(x,y,...) {
   message("Attempting to use T-SNE to plot the vector representation")
   message("Cancel if this is taking too long")
+  message("Or run 'install.packages' tsne if you don't have it.")
   short = x[1:min(300,nrow(x)),]
   m = tsne::tsne(short,...)
   plot(m,type='n',main="A two dimensional reduction of the vector space model using t-SNE")

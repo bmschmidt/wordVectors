@@ -4,3 +4,5 @@
 inst/extdata/
 .DS_Store
 hum2vec.Rproj
+src/*.o
+src/*.so

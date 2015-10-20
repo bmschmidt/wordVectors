@@ -26,7 +26,8 @@ This function exports a directory or document to a single file
 suitable to Word2Vec run on. That means a single, seekable txt file
 with tokens separated by spaces. (For example, punctuation is removed
 rather than attached to the end of words.)
-This function is quite inefficient: in most cases, you'll be better
-off preparing the documents using.
+This function is extraordinarily inefficient: in most real-world cases, you'll be
+much better off preparing the documents using python, perl, awk, or any other
+scripting language that can reasonable read things in line-by-line.
 }
 

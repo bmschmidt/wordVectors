@@ -17,6 +17,8 @@
 ##' @references \url{https://code.google.com/p/word2vec/}
 ##' @export
 ##'
+##' @useDynLib wordVectors
+##'
 ##' @examples \dontrun{
 ##' model = word2vec(system.file("examples", "rfaq.txt", package = "tmcn.word2vec"))
 ##' }
@@ -61,8 +63,9 @@ train_word2vec <- function(train_file, output_file = "vectors.txt",vectors=100,t
 #' suitable to Word2Vec run on. That means a single, seekable txt file
 #' with tokens separated by spaces. (For example, punctuation is removed
 #' rather than attached to the end of words.)
-#' This function is quite inefficient: in most cases, you'll be better
-#' off preparing the documents using.
+#' This function is extraordinarily inefficient: in most real-world cases, you'll be
+#' much better off preparing the documents using python, perl, awk, or any other
+#' scripting language that can reasonable read things in line-by-line.
 #'
 #' @param origin A text file or a directory of text files
 #'  to be used in training the model
@@ -77,19 +80,42 @@ train_word2vec <- function(train_file, output_file = "vectors.txt",vectors=100,t
 prep_word2vec <- function(origin,destination,
                           split_characters="\\W",lowercase=F)
 {
+  # strsplit chokes on large lines. I would not have gone down this path if I knew this
+  # to begin with.
+  non_choking_strsplit <- function(lines,...) {
+    splitLineIfNecessary = function(line,limit=10000) {
+      # recursive function.
+      chars = nchar(line)
+      if (chars < limit) {
+        return(line)
+      } else {
+        first_half = substr(line,1,nchar(line) %/% 2)
+        second_half = substr(line,1,nchar(line) %/% 2)
+        return(c(splitLineIfNecessary(first_half),splitLineIfNecessary(second_half)))
+      }
+    }
+    lines = unlist(lapply(lines,splitLineIfNecessary))
+    unlist(strsplit(lines,...))
+  }
+
   message("Beginning tokenization to text file at ", destination)
   if (dir.exists(origin)) {
     origin = list.files(origin,recursive=T,full.names = T)
   }
   cat("",file=destination,append=F)
   for (filename in origin) {
-    message(filename)
-    con = file(filename)
-    all = readLines(con)
-    words = unlist(strsplit(all,split_characters,perl=T))
-    if (lowercase) {words=tolower(words)}
-    cat(c(words,"\n"),file=destination,append=T)
+    message("\n",filename,appendLF=F)
+    con = file(filename,open="r")
+    while(length(lines <- readLines(con, n = 1000, warn = FALSE))>0) {
+      message(".",appendLF=F)
+      words = non_choking_strsplit(lines,split_characters,perl=T)
+      if (lowercase) {words=tolower(words)}
+      cat(c(words," "),file=destination,append=T)
+    }
+
     close(con)
+    cat(c("\n"),file=destination,append=T)
+
   }
   silent = destination
 }
