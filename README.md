@@ -10,15 +10,15 @@ One of the major hurdles to running word2vec for ordinary people is that it requ
 2. Open	  R, and get a command-line prompt (the thing with a carat on the left hand side.) This is where you'll be copy-pasting commands.
 3. Install (if you don't already have it) the package `devtools` by pasting the	    following
     ```R
-        install.packages("devtools")
-	    ```
+    install.packages("devtools")
+    ```
 
 4. Install the latest version of this package from Github by pasting in the following.
     ```R
-        library(devtools)
-	    install.packages("bmschmidt/wordVectors")
-	        ```
-		    Windows users may need to install "Rtools" as well: if so, a message to this effect should appear in red on the screen. This may through a very large number of warnings: so long as it says "warning" and not "error", you're probably OK.
+    library(devtools)
+    install.packages("bmschmidt/wordVectors")
+    ```
+    Windows users may need to install "Rtools" as well: if so, a message to this effect should appear in red on the screen. This may through a very large number of warnings: so long as it says "warning" and not "error", you're probably OK.
 
 ## Testing the setup
 
@@ -75,7 +75,7 @@ plot(filter_to_rownames(model,names(some_fish)))
 But this set actually gives a fairly nicely clustered set of results if you plot the top words in the whole thing.
 
 ```{r}
-nearest_to(model)
+plot(model)
 ```
 
 There's a lot of other stuff you can do besides just measuring nearness: you can do analogies, projection, and more complicated plots. But for that you should read my blog posts on this.
