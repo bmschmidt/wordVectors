@@ -16,7 +16,7 @@ One of the major hurdles to running word2vec for ordinary people is that it requ
 4. Install the latest version of this package from Github by pasting in the following.
     ```R
     library(devtools)
-    install.packages("bmschmidt/wordVectors")
+    install_github("bmschmidt/wordVectors")
     ```
     Windows users may need to install "Rtools" as well: if so, a message to this effect should appear in red on the screen. This may through a very large number of warnings: so long as it says "warning" and not "error", you're probably OK.
 
