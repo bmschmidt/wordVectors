@@ -1,4 +1,4 @@
-An R package for building and exploring Word2Vec models. (And ideally, other models like GloVe as well, though I haven't gotten around to it.)
+An R package for building and exploring Word2Vec models. (And ideally, other models like GloVe as well, though I haven't gotten around to it.) Includes an altered version of Tomas Mikolov's original C code for word2vec; those wrappers were origally written by Jian Li, and I've only tweaked them a little. Also includes a number of vector manipulation functions (like cosine similarity) for people who don't want to worry too much about vectors.
 
 It doesn't include a full vignette in the code, but if you cut and paste what's below, you can get started by building a model on 77 historical cookbooks from Michigan State University (which I encountered thanks to Alan Liu.)
 
