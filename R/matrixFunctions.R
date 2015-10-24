@@ -8,6 +8,21 @@
 #' @exportClass VectorSpaceModel
 setClass("VectorSpaceModel",contains = "matrix")
 
+
+#' VectorSpaceModel indexing
+#'
+#  @description Reduce a VectorSpaceModel to a smaller one
+#' @param VectorSpaceModel
+#'
+#' @return A VectorSpaceModel
+#'
+#' I believe this is necessary, but honestly am not sure.
+#'
+setMethod("[","VectorSpaceModel",function(x,i,j,...) {
+  new("VectorSpaceModel",x@.Data[i,j])
+})
+
+
 #' VectorSpaceModel subsetting
 #'
 #  @description Reduce a VectorSpaceModel to a single object.
@@ -44,10 +59,23 @@ setMethod("show","VectorSpaceModel",function(object) {
   message("A VectorSpaceModel object of ",dims[1]," words and ", dims[2], " vectors")
 })
 
+#' Plot a Vector Space Model.
+#'
+#' Visualizing a model as a whole is sort of undefined. I think the
+#' sanest thing to do is reduce the full model down to two dimensions
+#' using T-SNE, which preserves some of the local clusters.
+#'
+#' This plots only the first 300 words in the model.
+#'
+#' @param VectorSpaceModel
+#'
+#' @return The TSNE model (silently.)
+#' @export
 setMethod("plot","VectorSpaceModel",function(x,y,...) {
   message("Attempting to use T-SNE to plot the vector representation")
   message("Cancel if this is taking too long")
   message("Or run 'install.packages' tsne if you don't have it.")
+  x = as.matrix(x)
   short = x[1:min(300,nrow(x)),]
   m = tsne::tsne(short,...)
   plot(m,type='n',main="A two dimensional reduction of the vector space model using t-SNE")
@@ -215,7 +243,7 @@ project = function(matrix,vector) {
   }
   # The dot product of the projected matrix is a constant.
   bdotitself = b %*% b
-  
+
   projected = crossprod(t(matrix %*% b)/as.vector((b %*% b)) , b)
   return(projected)
 }
