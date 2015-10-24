@@ -19,7 +19,7 @@ setClass("VectorSpaceModel",contains = "matrix")
 #' I believe this is necessary, but honestly am not sure.
 #'
 setMethod("[","VectorSpaceModel",function(x,i,j,...) {
-  new("VectorSpaceModel",x@.Data[i,j])
+  new("VectorSpaceModel",x@.Data[i,j,drop=F])
 })
 
 
@@ -39,7 +39,7 @@ setMethod("[[","VectorSpaceModel",function(x,i,...) {
   {
   val = matrix(
     colMeans(
-      x[rownames(x) %in% i,,drop=F]
+      x@.Data[rownames(x) %in% i,,drop=F]
       )
     ,nrow=1
     ,dimnames = list(
@@ -56,7 +56,8 @@ setMethod("[[","VectorSpaceModel",function(x,i,...) {
 
 setMethod("show","VectorSpaceModel",function(object) {
   dims = dim(object)
-  message("A VectorSpaceModel object of ",dims[1]," words and ", dims[2], " vectors")
+  cat("A VectorSpaceModel object of ",dims[1]," words and ", dims[2], " vectors\n")
+  show(object@.Data[1:min(nrow(object),10),1:min(ncol(object),6)])
 })
 
 #' Plot a Vector Space Model.
