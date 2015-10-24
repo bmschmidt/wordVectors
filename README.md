@@ -101,7 +101,8 @@ One of the major hurdles to running word2vec for ordinary people is that it requ
 
 ## Testing the setup
 
-First, download and extract a zip file of cookbooks from the MSU library by pasting the following lines.
+We'll test the setup by running a complete VSM. First, download and extract a zip file of cookbooks from the MSU library by pasting the following lines.
+
 ```{r}
 if (!file.exists("cookbooks.zip")) {
   download.file("http://archive.lib.msu.edu/dinfo/feedingamerica/cookbook_text.zip","cookbooks.zip")
@@ -116,11 +117,13 @@ library(wordVectors)
 
 Next, we build a single text file consisting of all the cookbooks converted to lowercase with punctuation removed.
 
+**Note**: this `prep_word2vec` function is *extremely* inefficient compared to text parsing functions written in python or sed or pretty much any language you can think of. If you can create a file with punctuation already stripped or separated with some other tool, I **strongly** recommend doing it that way. But if you're working with a few hundred documents, this will get the job done, slowly. On the cookbooks, it should take a couple minutes.
+
 ```{r}
 prep_word2vec("cookbooks","cookbooks.txt",lowercase=T)
 ```
 
-Now we *train* the model.
+Now we *train* the model. This can take quite a while.
 
 ```{r}
 model = train_word2vec("cookbooks.txt",output="cookbooks.vectors",threads = 3,vectors = 100,window=12)
