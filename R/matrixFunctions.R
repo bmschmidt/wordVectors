@@ -6,7 +6,7 @@
 #' and, most importantly, accessing these objects.
 #' @return An object of class "VectorSpaceModel"
 #' @exportClass VectorSpaceModel
-setClass("VectorSpaceModel",contains = "matrix")
+setClass("VectorSpaceModel",representation("matrix"))
 
 
 #' VectorSpaceModel indexing
@@ -22,6 +22,25 @@ setMethod("[","VectorSpaceModel",function(x,i,j,...) {
   new("VectorSpaceModel",x@.Data[i,j,drop=F])
 })
 
+#' VectorSpaceModel subtraction
+#'
+#' @description Keep the VSM class when doing subtraction operations;
+#' make it possible to subtract a single row from an entire model.
+#' @param VectorSpaceModel
+#'
+#' @return A VectorSpaceModel
+#'
+#' I believe this is necessary, but honestly am not sure.
+#'
+setMethod("-",signature(e1="VectorSpaceModel",e2="VectorSpaceModel"),function(e1,e2) {
+    if (nrow(e1)==nrow(e2) && ncol(e1)==ncol(e2)) {
+      return (new("VectorSpaceModel",e1@.Data-e2@.Data))
+    }
+    if (nrow(e2)==1) {
+      return(t(t(e1-as.vector(e2))))
+    }
+    stop("Vector space model subtraction must use models of equal dimensions")
+})
 
 #' VectorSpaceModel subsetting
 #'
@@ -29,7 +48,7 @@ setMethod("[","VectorSpaceModel",function(x,i,j,...) {
 #' @param VectorSpaceModel
 #'
 #' @return A VectorSpaceModel of a single row.
-setMethod("[[","VectorSpaceModel",function(x,i,...) {
+setMethod("[[","VectorSpaceModel",function(x,i,collapse=TRUE...) {
   # The wordvec class can extract a row from the matrix
   # by accessing the rownames. x[["king"]] gives the row
   # for which the rowname is "king"; x[[c("king","queen")]] gives
@@ -37,9 +56,10 @@ setMethod("[[","VectorSpaceModel",function(x,i,...) {
   # be useful.
   if(typeof(i)=="character")
   {
+    matching_rows = x@.Data[rownames(x) %in% i,,drop=F]
+
   val = matrix(
-    colMeans(
-      x@.Data[rownames(x) %in% i,,drop=F]
+    colMeans(matching_rows
       )
     ,nrow=1
     ,dimnames = list(
