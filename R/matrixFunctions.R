@@ -37,7 +37,7 @@ setMethod("-",signature(e1="VectorSpaceModel",e2="VectorSpaceModel"),function(e1
       return (new("VectorSpaceModel",e1@.Data-e2@.Data))
     }
     if (nrow(e2)==1) {
-      return(t(t(e1-as.vector(e2))))
+      return(t(t(e1)-as.vector(e2)))
     }
     stop("Vector space model subtraction must use models of equal dimensions")
 })
