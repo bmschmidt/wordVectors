@@ -22,6 +22,8 @@ One portion of this is an expanded version of the code from Jian Li's `word2vec`
 
 The input must still be in a single file and pre-tokenized, but it uses the existing word2vec C code. For online data processing, I like the gensim python implementation, but I don't plan to link that to R.
 
+In RStudio I've noticed that this appears to hang, but if you check processors it actually still runs. Try it on smaller portions first, and then let it take time: the training function can take hours for tens of thousands of books.
+
 ## VectorSpaceModel object
 
 The package loads in the word2vec binary format with the format `read.vectors` into a new object called a "VectorSpaceModel" object. It's a light superclass of the standard R matrix object. Anything you can do with matrices, you can do with VectorSpaceModel objects.
@@ -123,7 +125,7 @@ Next, we build a single text file consisting of all the cookbooks converted to l
 prep_word2vec("cookbooks","cookbooks.txt",lowercase=T)
 ```
 
-Now we *train* the model. This can take quite a while.
+Now we *train* the model. This can take quite a while. In RStudio I've noticed that this appears to hang, but if you check processors it actually still runs. Try it on smaller portions first, and then let it take time: the training function can take hours for tens of thousands of books.
 
 ```{r}
 model = train_word2vec("cookbooks.txt",output="cookbooks.vectors",threads = 3,vectors = 100,window=12)
