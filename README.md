@@ -119,7 +119,7 @@ library(wordVectors)
 
 Next, we build a single text file consisting of all the cookbooks converted to lowercase with punctuation removed.
 
-**Note**: this `prep_word2vec` function is *extremely* inefficient compared to text parsing functions written in python or sed or pretty much any language you can think of. If you can create a file with punctuation already stripped or separated with some other tool, I **strongly** recommend doing it that way. But if you're working with a few hundred documents, this will get the job done, slowly. On the cookbooks, it should take a couple minutes.
+**Note**: this `prep_word2vec` function is *extremely* inefficient compared to text parsing functions written in python or sed or pretty much any language you can think of. I'm only including it for Windows compatibility of examples. If you can create a file with punctuation already stripped or separated any other way, I **strongly** recommend doing it that way.  But if you're working with a few hundred documents, this will get the job done, slowly. On the cookbooks, it should take a couple minutes. (For reference: in a console,  `perl -pe 's/[^A-Za-z_0-9 \n]/ /g;' cookbooks/* > cookbooks.txt` will do the same thing in a couple *seconds*. Seriously, I have no idea how to write fast R text-parsing code.)
 
 ```{r}
 prep_word2vec("cookbooks","cookbooks.txt",lowercase=T)
