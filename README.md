@@ -6,15 +6,17 @@ This package gathers several useful operations for working with vector-space mod
 
 If you want to run it without knowing the details, [jump to the quick-start guide](#quick-start).
 
+Right now, it [seems to fail to compile under Windows 8 (but not Windows 7 or Windows 10)](https://github.com/bmschmidt/wordVectors/issues/2). OS X and Linux seem fine. If you know anything about mingw C flags or the like and can fix this, I'd be grateful. 
+
 # Description
 
 It does three major things:
 
-1. [Trains word2vec models](#creating-text-vectors)
+1. [Trains word2vec models](#creating-text-vectors) using Jian Li's word2vec code.
 2. [Creates a new `VectorSpaceModel` class to simplify extracting elements of vector space models](#vectorspacemodel-object)
 3. [Bundles several basic functions to execute basic vector space operations like cosine similarity, nearest neighbor, and vector projection.](#useful-matrix-operations)
 
-It's not extra fast, but once the data is loaded in most operations happen in suitable time for exploratory data analysis (under a second on my laptop.)
+It's not extremely fast, but once the data is loaded in most operations happen in suitable time for exploratory data analysis (under a second on my laptop.)
 
 ## Creating text vectors.
 
