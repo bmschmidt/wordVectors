@@ -6,7 +6,7 @@ This package gathers several useful operations for working with vector-space mod
 
 If you want to run it without knowing the details, [jump to the quick-start guide](#quick-start).
 
-Right now, it [seems to fail to compile under Windows 8 (but not Windows 7 or Windows 10)](https://github.com/bmschmidt/wordVectors/issues/2). OS X and Linux seem fine. If you know anything about mingw C flags or the like and can fix this, I'd be grateful. 
+Right now, it [does not install under Windows 8](https://github.com/bmschmidt/wordVectors/issues/2).  Help appreciated on that thread. OS X, Windows 7, Windows 10, and Linux install perfectly well, AFAIK. 
 
 # Description
 
