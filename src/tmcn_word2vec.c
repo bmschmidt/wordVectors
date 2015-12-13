@@ -4,18 +4,23 @@
 
 void tmcn_word2vec(char *train_file0, char *output_file0,
                    char *binary0, char *dims0, char *threads,
-                   char *window, char *classes0, char *cbow0, char *min_count0)
+                   char *window0, char *classes0, char *cbow0, char *min_count0)
 {
 	int i;
   layer1_size = atoll(dims0);
   num_threads = atoi(threads);
-  window=atoi(window);
+  window=atoi(window0);
 	binary = atoi(binary0);
 	classes = atoi(classes0);
 	cbow = atoi(cbow0);
 	min_count = atoi(min_count0);
 	strcpy(train_file, train_file0);
 	strcpy(output_file, output_file0);
+
+	alpha = 0.025;
+	starting_alpha = alpha;
+	word_count_actual = 0;
+
 	vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
 	vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
 	expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
