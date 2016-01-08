@@ -12,6 +12,13 @@
 ##' @title Train a model by word2vec.
 ##' @param train_file Path of a single .txt file for training. Tokens are split on spaces.
 ##' @param output_file Path of the output file.
+##' @param vectors The number of vectors to output. Defaults to 100. More vectors may be useful with large files.
+##' @param threads Number of threads to run training process on. Defaults to 1; up to the number of cores on your machine may be useful.
+##' @param window The size of the window (in words) to use in training.
+##' @param classes Number of classes for k-means clustering. Not documented/tested.
+##' @param cbow If 1, use a continuous-bag-of-words model instead of skip-grams. Defaults to false (recommended for newcomers).
+##' @param min_count Minimum times a word must appear to be included in the samples. High values help reduce model size.
+##' @param iter Number of passes to make over the corpus in training.
 ##' @return A word2vec object.
 ##' @author Jian Li <\email{rweibo@@sina.com}>, Ben Schmidt <\email{bmchmidt@@gmail.com}>
 ##' @references \url{https://code.google.com/p/word2vec/}
@@ -22,10 +29,11 @@
 ##' @examples \dontrun{
 ##' model = word2vec(system.file("examples", "rfaq.txt", package = "tmcn.word2vec"))
 ##' }
-train_word2vec <- function(train_file, output_file = "vectors.txt",vectors=100,threads=1,window=12,classes=0,cbow=0,min_count=5)
+train_word2vec <- function(train_file, output_file = "vectors.txt",vectors=100,threads=1,window=12,
+                           classes=0,cbow=0,min_count=5,iter=5)
 {
   if (!file.exists(train_file)) stop("Can't find the training file!")
-  if (file.exists(output_file)) return(read.vectors(output_file))
+  if (file.exists(output_file)) stop("The output file '", output_file , "' already exists: delete or give a new destination.")
 
   train_dir <- dirname(train_file)
 
@@ -53,8 +61,8 @@ train_word2vec <- function(train_file, output_file = "vectors.txt",vectors=100,t
             window=as.character(window),
             classes=as.character(classes),
             cbow=as.character(cbow),
-            min_count=as.character(min_count)
-
+            min_count=as.character(min_count),
+            iter=as.character(iter)
   )
 
   read.vectors(output_file)
