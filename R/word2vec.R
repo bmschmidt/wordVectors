@@ -22,7 +22,7 @@
 ##' @examples \dontrun{
 ##' model = word2vec(system.file("examples", "rfaq.txt", package = "tmcn.word2vec"))
 ##' }
-train_word2vec <- function(train_file, output_file = "vectors.txt",vectors=100,threads=1,window=12)
+train_word2vec <- function(train_file, output_file = "vectors.txt",vectors=100,threads=1,window=12,classes=0,cbow=0,min_count=5)
 {
   if (!file.exists(train_file)) stop("Can't find the training file!")
   if (file.exists(output_file)) return(read.vectors(output_file))
@@ -50,7 +50,10 @@ train_word2vec <- function(train_file, output_file = "vectors.txt",vectors=100,t
             binary = as.character(binary),
             dims=as.character(vectors),
             threads=as.character(threads),
-            window=as.character(window)
+            window=as.character(window),
+            classes=as.character(classes),
+            cbow=as.character(cbow),
+            min_count=as.character(min_count)
 
   )
 

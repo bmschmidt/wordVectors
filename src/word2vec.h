@@ -41,7 +41,7 @@ struct vocab_word *vocab;
 int binary = 0, cbow = 0, debug_mode = 2, window = 12, min_count = 5, num_threads = 1, min_reduce = 1;
 int *vocab_hash;
 long long vocab_max_size = 1000, vocab_size = 0, layer1_size = 100;
-long long train_words = 0, word_count_actual = 0, file_size = 0, classes = 0;
+long long train_words = 0, word_count_actual = 0, iter = 5, file_size = 0, classes = 0;
 real alpha = 0.025, starting_alpha, sample = 0;
 real *syn0, *syn1, *syn1neg, *expTable;
 clock_t start;
@@ -363,7 +363,7 @@ void InitNet() {
 void *TrainModelThread(void *id) {
   long long a, b, d, word, last_word, sentence_length = 0, sentence_position = 0;
   long long word_count = 0, last_word_count = 0, sen[MAX_SENTENCE_LENGTH + 1];
-  long long l1, l2, c, target, label;
+  long long l1, l2, c, target, label, local_iter = iter;
   unsigned long long next_random = (long long)id;
   real f, g;
   clock_t now;
@@ -378,11 +378,11 @@ void *TrainModelThread(void *id) {
       if ((debug_mode > 1)) {
         now=clock();
         printf("%cAlpha: %f  Progress: %.2f%%  Words/thread/sec: %.2fk  ", 13, alpha,
-         word_count_actual / (real)(train_words + 1) * 100,
+         word_count_actual / (real)(iter * train_words + 1) * 100,
          word_count_actual / ((real)(now - start + 1) / (real)CLOCKS_PER_SEC * 1000));
         fflush(stdout);
       }
-      alpha = starting_alpha * (1 - word_count_actual / (real)(train_words + 1));
+      alpha = starting_alpha * (1 - word_count_actual / (real)(iter * train_words + 1));
       if (alpha < starting_alpha * 0.0001) alpha = starting_alpha * 0.0001;
     }
     if (sentence_length == 0) {
@@ -404,8 +404,16 @@ void *TrainModelThread(void *id) {
       }
       sentence_position = 0;
     }
-    if (feof(fi)) break;
-    if (word_count > train_words / num_threads) break;
+    if (feof(fi) || (word_count > train_words / num_threads)) {
+       word_count_actual += word_count - last_word_count;
+       local_iter--;
+       if (local_iter == 0) break;
+       word_count = 0;
+       last_word_count = 0;
+       sentence_length = 0;
+       fseek(fi, file_size / (long long)num_threads * (long long)id, SEEK_SET);
+       continue;
+    }
     word = sen[sentence_position];
     if (word == -1) continue;
     for (c = 0; c < layer1_size; c++) neu1[c] = 0;
