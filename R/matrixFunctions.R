@@ -266,7 +266,7 @@ project = function(matrix,vector) {
   bdotitself = b %*% b
 
   projected = crossprod(t(matrix %*% b)/as.vector((b %*% b)) , b)
-  return(new("VectorSpaceModel",projected))
+  return(projected)
 }
 
 #' Return a vector rejection for each element in a VectorSpaceModel
