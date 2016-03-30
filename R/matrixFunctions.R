@@ -130,7 +130,7 @@ as.VectorSpaceModel = function(matrix) {
 #'
 read.vectors <- function(filename,vectors=guess_n_cols(),binary=FALSE,...) {
 
-  if(rev(strsplit(filename,"\\.")[[1]]) =="bin") {
+  if(rev(strsplit(filename,"\\.")[[1]])[1] =="bin") {
     message("Filename ends with .bin: are you sure you don't want to specify 'binary=TRUE' to this function?")
   }
 
