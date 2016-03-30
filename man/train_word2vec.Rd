@@ -5,12 +5,27 @@
 \title{Train a model by word2vec.}
 \usage{
 train_word2vec(train_file, output_file = "vectors.txt", vectors = 100,
-  threads = 1, window = 12)
+  threads = 1, window = 12, classes = 0, cbow = 0, min_count = 5,
+  iter = 5)
 }
 \arguments{
 \item{train_file}{Path of a single .txt file for training. Tokens are split on spaces.}
 
 \item{output_file}{Path of the output file.}
+
+\item{vectors}{The number of vectors to output. Defaults to 100. More vectors may be useful with large files.}
+
+\item{threads}{Number of threads to run training process on. Defaults to 1; up to the number of cores on your machine may be useful.}
+
+\item{window}{The size of the window (in words) to use in training.}
+
+\item{classes}{Number of classes for k-means clustering. Not documented/tested.}
+
+\item{cbow}{If 1, use a continuous-bag-of-words model instead of skip-grams. Defaults to false (recommended for newcomers).}
+
+\item{min_count}{Minimum times a word must appear to be included in the samples. High values help reduce model size.}
+
+\item{iter}{Number of passes to make over the corpus in training.}
 }
 \value{
 A word2vec object.

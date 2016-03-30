@@ -4,14 +4,16 @@
 \alias{read.vectors}
 \title{Read VectorSpaceModel}
 \usage{
-read.vectors(filename, vectors = guess_n_cols(), ...)
+read.vectors(filename, vectors = guess_n_cols(), binary = FALSE, ...)
 }
 \arguments{
 \item{filename}{The file to read in.}
 
 \item{vectors}{The number of dimensions word2vec calculated. Imputed automatically if not specified.}
 
-\item{...}{Further arguments passed to read.table. Word2vec produces
+\item{binary}{Read in the binary word2vec form. (Wraps `read.binary.vectors`)}
+
+\item{...}{Further arguments passed to read.table or read.binary.vectors. Word2vec produces
 by default frequency sorted output. Therefore [limits nrow=500], for example,
 will return the vectors to the top 500 words.}
 }

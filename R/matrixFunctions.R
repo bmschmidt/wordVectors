@@ -121,13 +121,22 @@ as.VectorSpaceModel = function(matrix) {
 #'
 #' @param filename The file to read in.
 #' @param vectors The number of dimensions word2vec calculated. Imputed automatically if not specified.
-#' @param ... Further arguments passed to read.table. Word2vec produces
+#' @param binary Read in the binary word2vec form. (Wraps `read.binary.vectors`)
+#' @param ... Further arguments passed to read.table or read.binary.vectors. Word2vec produces
 #' by default frequency sorted output. Therefore [limits nrow=500], for example,
 #' will return the vectors to the top 500 words.
 #' @export
 #' @return An matrixlike object of class `VectorSpaceModel`
-read.vectors <- function(filename,vectors=guess_n_cols(),
-                         ...) {
+#'
+read.vectors <- function(filename,vectors=guess_n_cols(),binary=FALSE,...) {
+
+  if(rev(strsplit(filename,"\\.")[[1]]) =="bin") {
+    message("Filename ends with .bin: are you sure you don't want to specify 'binary=TRUE' to this function?")
+  }
+
+  if(binary) {
+    return(read.binary.vectors(filename))
+  }
 
   # Figure out how many dimensions.
   guess_n_cols = function() {
@@ -147,7 +156,105 @@ read.vectors <- function(filename,vectors=guess_n_cols(),
   return(new("VectorSpaceModel",matrix))
 }
 
+#' Read binary word2vec format files
+#'
+#' @param filename A file in the binary word2vec format to import.
+#' @param nrows Optionally, a number of rows to stop reading after.
+#' Word2vec sorts by frequency, so limiting to the first 1000 rows will
+#' give the thousand most-common words; it can be useful not to load
+#' the whole matrix into memory
+#'
+#' @return A word2vec object
+#' @export
+#'
+#' @examples
+#'
+#' # Download the Google file from somewhere
+#' read.binary.vectors("foo.bin")
+#'
+#'
 
+read.binary.vectors = function(filename,nrows=Inf) {
+  a = file(filename,'rb')
+  rows = ""
+  mostRecent=""
+  while(mostRecent!=" ") {
+    mostRecent = readChar(a,1)
+    rows = paste0(rows,mostRecent)
+  }
+  rows = as.integer(rows)
+
+  cols = ""
+  while(mostRecent!="\n") {
+    mostRecent = readChar(a,1)
+    cols = paste0(cols,mostRecent)
+  }
+  cols = as.integer(cols)
+
+  if(nrows<rows) {
+    rows = nrows
+  }
+
+  message(paste("Reading a word2vec binary file of",rows,"rows and",cols,"columns"))
+
+  ## Read a row
+  rownames = rep("",rows)
+
+  # create progress bar
+  pb <- txtProgressBar(min = 0, max = rows, style = 3)
+
+
+  matrix = t(
+    vapply(1:rows,function(i) {
+      setTxtProgressBar(pb,i)
+
+      rowname=""
+      mostRecent=""
+      while(TRUE) {
+        mostRecent = readChar(a,1)
+        if (mostRecent==" ") {break}
+        rowname = paste0(rowname,mostRecent)
+      }
+      rownames[i] <<- rowname
+      row = readBin(a,numeric(),size=4,n=cols,endian="little")
+      return(row)
+    },as.array(rep(0,cols)))
+  )
+  close(pb)
+  close(a)
+  rownames(matrix) = rownames
+  return(as.VectorSpaceModel(matrix))
+}
+
+#' Write in word2vec binary style
+#'
+#' @param model The wordVectors model you wish to save. This can actually be any matrix with rownames,
+#' if you want a smaller binary serialization in single-precision floats.
+#' @param filename The file to save the vectors to. I recommend "bin" as a suffix.
+#'
+#' @return Nothing
+#' @export
+write.binary.word2vec = function(model,filename) {
+  filehandle = file(filename,"wb")
+  dim = dim(model)
+  writeChar(as.character(dim[1]),filehandle,useBytes=T,eos=NULL)
+  writeChar(" ",filehandle,eos=NULL)
+  writeChar(as.character(dim[2]),filehandle,eos=NULL)
+  writeChar("\n",filehandle,eos=NULL)
+  names = rownames(model)
+  # I just store the rownames outside the loop, here.
+  i = 1
+  names = rownames(model)
+  silent = apply(model,1,function(row) {
+    # EOS must be null for this to work properly, because, ridiculously,
+    # eos=NULL is the command to tell R *not* to insert a null string
+    # after a character.
+    writeChar(paste0(names[i]," "),filehandle,eos=NULL)
+    writeBin(row,filehandle,size=4,endian="little")
+    i <<- i+1
+  })
+  close(filehandle)
+}
 
 #' Vector Magnitudes
 #'

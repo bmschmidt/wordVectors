@@ -5,7 +5,7 @@
 \alias{[[,VectorSpaceModel-method}
 \title{VectorSpaceModel subsetting}
 \usage{
-\S4method{[[}{VectorSpaceModel}(x, i, j, ...)
+\S4method{[[}{VectorSpaceModel}(x, i, collapse = TRUE...)
 }
 \arguments{
 \item{VectorSpaceModel}{}
