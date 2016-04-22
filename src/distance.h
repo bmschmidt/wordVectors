@@ -37,8 +37,8 @@ void distance(char *file_name0, char *word0, char *returnw, double *returnd) {
     printf("Input file not found\n");
 
   }
-  fscanf(f, "%lld", &words);
-  fscanf(f, "%lld", &size);
+  if(fscanf(f, "%lld", &words)==1);
+  if(fscanf(f, "%lld", &size)==1);
   vocab = (char *)malloc((long long)words * max_w * sizeof(char));
   M = (float *)malloc((long long)words * (long long)size * sizeof(float));
   if (M == NULL) {
@@ -46,8 +46,8 @@ void distance(char *file_name0, char *word0, char *returnw, double *returnd) {
 
   }
   for (b = 0; b < words; b++) {
-    fscanf(f, "%s%c", &vocab[b * max_w], &ch);
-    for (a = 0; a < size; a++) fread(&M[a + b * size], sizeof(float), 1, f);
+    if(fscanf(f, "%s%c", &vocab[b * max_w], &ch)==1);
+    for (a = 0; a < size; a++) if(fread(&M[a + b * size], sizeof(float), 1, f)==1);
     len = 0;
     for (a = 0; a < size; a++) len += M[a + b * size] * M[a + b * size];
     len = sqrt(len);
