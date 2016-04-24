@@ -18,7 +18,7 @@ A list of characters that mark word breaks. By default,
 any nonword characters according to the perl regex engine. If stringi is installed,
 this parameter is ignored.}
 
-\item{tolower}{Logical. Should uppercase characters be converted to lower?}
+\item{lowercase}{Logical. Should uppercase characters be converted to lower?}
 }
 \value{
 The file name (silently).

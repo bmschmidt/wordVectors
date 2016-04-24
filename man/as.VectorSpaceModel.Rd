@@ -7,7 +7,7 @@
 as.VectorSpaceModel(matrix)
 }
 \arguments{
-\item{matrix}{}
+\item{matrix}{A matrix to coerce.}
 }
 \value{
 An object of class "VectorSpaceModel"

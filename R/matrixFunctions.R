@@ -12,16 +12,15 @@ setClass("VectorSpaceModel",representation("matrix"))
 #' VectorSpaceModel indexing
 #'
 #  @description Reduce a VectorSpaceModel to a smaller one
-#' @param VectorSpaceModel
+#' @param x The vectorspace model to subset
+#' @param i The row numbers to extract
+#' @param j The column numbers to extract
 #'
 #' @return A VectorSpaceModel
 #'
-#' I believe this is necessary, but honestly am not sure.
-#'
-setMethod("[","VectorSpaceModel",function(x,i,j,...) {
+setMethod("[","VectorSpaceModel",function(x,i,j) {
   x@.Data = x@.Data[i,j,drop=F]
   return(x)
-  #methods::new("VectorSpaceModel",x@.Data[i,j,drop=F])
 })
 
 #' VectorSpaceModel subtraction
@@ -52,13 +51,13 @@ setMethod("-",signature(e1="VectorSpaceModel",e2="VectorSpaceModel"),function(e1
 #' VectorSpaceModel subsetting
 #'
 #  @description Reduce a VectorSpaceModel to a single object.
-#' @param VectorSpaceModel
-#' @param i The words to use as rownames
+#' @param x The object being subsetted.
+#' @param i A character vector: the words to use as rownames.
 #' @param average Whether to collapse down to a single vector,
 #' or to return a subset of one row for each asked for.
 #'
 #' @return A VectorSpaceModel of a single row.
-setMethod("[[","VectorSpaceModel",function(x,i,average=TRUE,...) {
+setMethod("[[","VectorSpaceModel",function(x,i,average=TRUE) {
   # The wordvec class can extract a row from the matrix
   # by accessing the rownames. x[["king"]] gives the row
   # for which the rowname is "king"; x[[c("king","queen")]] gives
@@ -104,6 +103,8 @@ setMethod("show","VectorSpaceModel",function(object) {
 #'
 #' @param x The model to plot
 #' @param y (ignored)
+#' @param ... Further arguments passed to tsne::tsne.
+#' (Note: not to plot.)
 #'
 #' @return The TSNE model (silently.)
 #' @export
@@ -122,7 +123,7 @@ setMethod("plot","VectorSpaceModel",function(x,y,...) {
 
 #' Convert to a Vector Space Model
 #'
-#' @param matrix
+#' @param matrix A matrix to coerce.
 #'
 #' @return An object of class "VectorSpaceModel"
 #' @export as.VectorSpaceModel

@@ -11,6 +11,9 @@
 \item{x}{The model to plot}
 
 \item{y}{(ignored)}
+
+\item{...}{Further arguments passed to tsne::tsne.
+(Note: not to plot.)}
 }
 \value{
 The TSNE model (silently.)

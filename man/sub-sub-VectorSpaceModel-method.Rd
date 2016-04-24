@@ -5,15 +5,15 @@
 \alias{[[,VectorSpaceModel-method}
 \title{VectorSpaceModel subsetting}
 \usage{
-\S4method{[[}{VectorSpaceModel}(x, i, average = TRUE, ...)
+\S4method{[[}{VectorSpaceModel}(x, i, average = TRUE)
 }
 \arguments{
-\item{i}{The words to use as rownames}
+\item{x}{The object being subsetted.}
+
+\item{i}{A character vector: the words to use as rownames.}
 
 \item{average}{Whether to collapse down to a single vector,
 or to return a subset of one row for each asked for.}
-
-\item{VectorSpaceModel}{}
 }
 \value{
 A VectorSpaceModel of a single row.

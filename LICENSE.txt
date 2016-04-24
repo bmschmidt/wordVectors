@@ -1,5 +1,6 @@
 This Apache License is included in this package alongside the original 
-Google word2vec code.
+Google word2vec code. Both the word2vec code and Ben Schmidt's R functions 
+are released under the Apache license.
 
 
                                  Apache License

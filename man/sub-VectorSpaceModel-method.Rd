@@ -5,15 +5,17 @@
 \alias{[,VectorSpaceModel-method}
 \title{VectorSpaceModel indexing}
 \usage{
-\S4method{[}{VectorSpaceModel}(x, i, j, ..., drop = TRUE)
+\S4method{[}{VectorSpaceModel}(x, i, j)
 }
 \arguments{
-\item{VectorSpaceModel}{}
+\item{x}{The vectorspace model to subset}
+
+\item{i}{The row numbers to extract}
+
+\item{j}{The column numbers to extract}
 }
 \value{
 A VectorSpaceModel
-
-I believe this is necessary, but honestly am not sure.
 }
 \description{
 VectorSpaceModel indexing

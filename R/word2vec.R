@@ -1,4 +1,3 @@
-
 ##' Train a model by word2vec.
 ##'
 ##' The word2vec tool takes a text corpus as input and produces the
@@ -88,7 +87,7 @@ train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,t
 #' A list of characters that mark word breaks. By default,
 #' any nonword characters according to the perl regex engine. If stringi is installed,
 #' this parameter is ignored.
-#' @param tolower Logical. Should uppercase characters be converted to lower?
+#' @param lowercase Logical. Should uppercase characters be converted to lower?
 #'
 #'
 #'
