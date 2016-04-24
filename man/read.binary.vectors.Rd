@@ -20,8 +20,4 @@ A word2vec object
 \description{
 Read binary word2vec format files
 }
-\examples{
-# Download the Google file from somewhere
-read.binary.vectors("foo.bin")
-}
 

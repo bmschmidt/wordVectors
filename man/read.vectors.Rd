@@ -13,9 +13,11 @@ read.vectors(filename, vectors = guess_n_cols(), binary = FALSE, ...)
 
 \item{binary}{Read in the binary word2vec form. (Wraps `read.binary.vectors`)}
 
-\item{...}{Further arguments passed to read.table or read.binary.vectors. Word2vec produces
-by default frequency sorted output. Therefore [limits nrow=500], for example,
-will return the vectors to the top 500 words.}
+\item{...}{Further arguments passed to read.table or read.binary.vectors.
+Note that both accept 'nrow' as an argument. Word2vec produces
+by default frequency sorted output. Therefore 'read.vectors(...,nrows=500)', for example,
+will return the vectors for the top 500 words. This can be useful on machines with limited
+memory.}
 }
 \value{
 An matrixlike object of class `VectorSpaceModel`

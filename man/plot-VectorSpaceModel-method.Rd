@@ -8,7 +8,9 @@
 \S4method{plot}{VectorSpaceModel}(x, y, ...)
 }
 \arguments{
-\item{VectorSpaceModel}{}
+\item{x}{The model to plot}
+
+\item{y}{(ignored)}
 }
 \value{
 The TSNE model (silently.)

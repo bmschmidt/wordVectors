@@ -14,7 +14,7 @@ of the same length as the VectorSpaceModel.}
 }
 \value{
 A new matrix or VectorSpaceModel of the same dimensions as `matrix`,
-each row of which is orthogonal to `vector.`
+each row of which is orthogonal to the `vector` object.
 
 This is defined simply as `matrix-project(matrix,vector)`, but having a separate
 name may make for cleaner code.
@@ -23,5 +23,10 @@ See `project` for more details.
 }
 \description{
 Return a vector rejection for each element in a VectorSpaceModel
+}
+\examples{
+nearest_to(demo_vectors,demo_vectors[["man"]])
+genderless = reject(demo_vectors,demo_vectors[["he"]] - demo_vectors[["she"]])
+nearest_to(genderless,genderless[["man"]])
 }
 

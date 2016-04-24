@@ -318,7 +318,7 @@ void ReadVocab() {
     ReadWord(word, fin);
     if (feof(fin)) break;
     a = AddWordToVocab(word);
-    fscanf(fin, "%lld%c", &vocab[a].cn, &c);
+    if(fscanf(fin, "%lld%c", &vocab[a].cn, &c)==1);
     i++;
   }
   SortVocab();
@@ -338,25 +338,43 @@ void ReadVocab() {
 
 void InitNet() {
   long long a, b;
-  //a = posix_memalign((void **)&syn0, 128, (long long)vocab_size * layer1_size * sizeof(real));
-  syn0 = (real *) malloc((long long)vocab_size * layer1_size * sizeof(real));
+  unsigned long long next_random = 1;
+//  a = posix_memalign((void **)&syn0, 128, (long long)vocab_size * layer1_size * sizeof(real));
+#ifdef _WIN32
+  syn0 = (real *)_aligned_malloc((long long)vocab_size * layer1_size * sizeof(real), 128);
+#else
+  a = posix_memalign((void **)&syn0, 128, (long long)vocab_size * layer1_size * sizeof(real));
+#endif
+
   if (syn0 == NULL) {printf("Memory allocation failed\n"); exit(1);}
   if (hs) {
-    //a = posix_memalign((void **)&syn1, 128, (long long)vocab_size * layer1_size * sizeof(real));
-    syn1 = (real *) malloc((long long)vocab_size * layer1_size * sizeof(real));
-    if (syn1 == NULL) {printf("Memory allocation failed\n"); exit(1);}
-    for (b = 0; b < layer1_size; b++) for (a = 0; a < vocab_size; a++)
+//    a = posix_memalign((void **)&syn1, 128, (long long)vocab_size * layer1_size * sizeof(real));
+#ifdef _WIN32
+    syn1 = (real *)_aligned_malloc((long long)vocab_size * layer1_size * sizeof(real), 128);
+#else
+    a = posix_memalign((void **)&(syn1), 128, (long long)vocab_size * layer1_size * sizeof(real));
+#endif 
+
+   if (syn1 == NULL) {printf("Memory allocation failed\n"); exit(1);}
+    for (a = 0; a < vocab_size; a++) for (b = 0; b < layer1_size; b++)
      syn1[a * layer1_size + b] = 0;
   }
   if (negative>0) {
-    //a = posix_memalign((void **)&syn1neg, 128, (long long)vocab_size * layer1_size * sizeof(real));
-    syn1neg = (real *) malloc((long long)vocab_size * layer1_size * sizeof(real));
-    if (syn1neg == NULL) {printf("Memory allocation failed\n"); exit(1);}
-    for (b = 0; b < layer1_size; b++) for (a = 0; a < vocab_size; a++)
+   // a = posix_memalign((void **)&syn1neg, 128, (long long)vocab_size * layer1_size * sizeof(real));
+#ifdef _WIN32
+    syn1neg = (real *)_aligned_malloc((long long)vocab_size * layer1_size * sizeof(real), 128);
+#else
+    a = posix_memalign((void **)&(syn1neg), 128, (long long)vocab_size * layer1_size * sizeof(real));
+#endif
+    
+if (syn1neg == NULL) {printf("Memory allocation failed\n"); exit(1);}
+    for (a = 0; a < vocab_size; a++) for (b = 0; b < layer1_size; b++)
      syn1neg[a * layer1_size + b] = 0;
   }
-  for (b = 0; b < layer1_size; b++) for (a = 0; a < vocab_size; a++)
-   syn0[a * layer1_size + b] = (rand() / (real)RAND_MAX - 0.5) / layer1_size;
+  for (a = 0; a < vocab_size; a++) for (b = 0; b < layer1_size; b++) {
+    next_random = next_random * (unsigned long long)25214903917 + 11;
+    syn0[a * layer1_size + b] = (((next_random & 0xFFFF) / (real)65536) - 0.5) / layer1_size;
+  }
   CreateBinaryTree();
 }
 

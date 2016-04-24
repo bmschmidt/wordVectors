@@ -13,8 +13,10 @@ to be used in training the model}
 
 \item{destination}{The location for output text.}
 
-\item{split_characters}{A list of characters that mark word breaks. By default,
-any nonword characters according to the perl regex engine.}
+\item{split_characters}{If the 'stringi' package is not installed,
+A list of characters that mark word breaks. By default,
+any nonword characters according to the perl regex engine. If stringi is installed,
+this parameter is ignored.}
 
 \item{tolower}{Logical. Should uppercase characters be converted to lower?}
 }
