@@ -19,16 +19,23 @@ setClass("VectorSpaceModel",representation("matrix"))
 #' I believe this is necessary, but honestly am not sure.
 #'
 setMethod("[","VectorSpaceModel",function(x,i,j,...) {
-  new("VectorSpaceModel",x@.Data[i,j,drop=F])
+  x@.Data = x@.Data[i,j,drop=F]
+  return(x)
+  #new("VectorSpaceModel",x@.Data[i,j,drop=F])
 })
 
 #' VectorSpaceModel subtraction
 #'
 #' @description Keep the VSM class when doing subtraction operations;
 #' make it possible to subtract a single row from an entire model.
-#' @param VectorSpaceModel
+#' @param e1 A vector space model
+#' @param e2 A vector space model of equal size OR a vector
+#' space model of a single row. If the latter (which is more likely)
+#' the specified row will be subtracted from each row.
 #'
-#' @return A VectorSpaceModel
+#'
+#' @return A VectorSpaceModel of the same dimensions and rownames
+#' as e1
 #'
 #' I believe this is necessary, but honestly am not sure.
 #'
@@ -46,9 +53,12 @@ setMethod("-",signature(e1="VectorSpaceModel",e2="VectorSpaceModel"),function(e1
 #'
 #  @description Reduce a VectorSpaceModel to a single object.
 #' @param VectorSpaceModel
+#' @param i The words to use as rownames
+#' @param average Whether to collapse down to a single vector,
+#' or to return a subset of one row for each asked for.
 #'
 #' @return A VectorSpaceModel of a single row.
-setMethod("[[","VectorSpaceModel",function(x,i,collapse=TRUE...) {
+setMethod("[[","VectorSpaceModel",function(x,i,average=TRUE,...) {
   # The wordvec class can extract a row from the matrix
   # by accessing the rownames. x[["king"]] gives the row
   # for which the rowname is "king"; x[[c("king","queen")]] gives
@@ -57,14 +67,18 @@ setMethod("[[","VectorSpaceModel",function(x,i,collapse=TRUE...) {
   if(typeof(i)=="character")
   {
     matching_rows = x@.Data[rownames(x) %in% i,,drop=F]
+    if (average) {
+      val = matrix(
+              colMeans(matching_rows)
+              ,nrow=1
+              ,dimnames = list(
+                c(),colnames(x))
+            )
+    } else {
+      val=matching_rows
+      rownames(val) = rownames(x)[rownames(x) %in% i]
+    }
 
-  val = matrix(
-    colMeans(matching_rows
-      )
-    ,nrow=1
-    ,dimnames = list(
-      c(),colnames(x))
-    )
   return(new("VectorSpaceModel",val))
   }
   else if (typeof(i)=="integer") {
@@ -88,7 +102,8 @@ setMethod("show","VectorSpaceModel",function(object) {
 #'
 #' This plots only the first 300 words in the model.
 #'
-#' @param VectorSpaceModel
+#' @param x The model to plot
+#' @param y (ignored)
 #'
 #' @return The TSNE model (silently.)
 #' @export
@@ -122,16 +137,19 @@ as.VectorSpaceModel = function(matrix) {
 #' @param filename The file to read in.
 #' @param vectors The number of dimensions word2vec calculated. Imputed automatically if not specified.
 #' @param binary Read in the binary word2vec form. (Wraps `read.binary.vectors`)
-#' @param ... Further arguments passed to read.table or read.binary.vectors. Word2vec produces
-#' by default frequency sorted output. Therefore [limits nrow=500], for example,
-#' will return the vectors to the top 500 words.
+#' @param ... Further arguments passed to read.table or read.binary.vectors.
+#' Note that both accept 'nrow' as an argument. Word2vec produces
+#' by default frequency sorted output. Therefore 'read.vectors(...,nrows=500)', for example,
+#' will return the vectors for the top 500 words. This can be useful on machines with limited
+#' memory.
 #' @export
 #' @return An matrixlike object of class `VectorSpaceModel`
 #'
 read.vectors <- function(filename,vectors=guess_n_cols(),binary=FALSE,...) {
 
   if(rev(strsplit(filename,"\\.")[[1]])[1] =="bin") {
-    message("Filename ends with .bin: are you sure you don't want to specify 'binary=TRUE' to this function?")
+    message("Filename ends with .bin, so reading in binary format")
+    binary=TRUE
   }
 
   if(binary) {
@@ -166,11 +184,6 @@ read.vectors <- function(filename,vectors=guess_n_cols(),binary=FALSE,...) {
 #'
 #' @return A word2vec object
 #' @export
-#'
-#' @examples
-#'
-#' # Download the Google file from somewhere
-#' read.binary.vectors("foo.bin")
 #'
 #'
 
@@ -213,7 +226,10 @@ read.binary.vectors = function(filename,nrows=Inf) {
       while(TRUE) {
         mostRecent = readChar(a,1)
         if (mostRecent==" ") {break}
-        rowname = paste0(rowname,mostRecent)
+        if (mostRecent!="\n") {
+          # Some versions end with newlines, some don't.
+          rowname = paste0(rowname,mostRecent)
+        }
       }
       rownames[i] <<- rowname
       row = readBin(a,numeric(),size=4,n=cols,endian="little")
@@ -226,18 +242,18 @@ read.binary.vectors = function(filename,nrows=Inf) {
   return(as.VectorSpaceModel(matrix))
 }
 
-#' Write in word2vec binary style
+#' Write in word2vec binary format
 #'
-#' @param model The wordVectors model you wish to save. This can actually be any matrix with rownames,
-#' if you want a smaller binary serialization in single-precision floats.
-#' @param filename The file to save the vectors to. I recommend "bin" as a suffix.
+#' @param model The wordVectors model you wish to save. (This can actually be any matrix with rownames,
+#' if you want a smaller binary serialization in single-precision floats.)
+#' @param filename The file to save the vectors to. I recommend ".bin" as a suffix.
 #'
 #' @return Nothing
 #' @export
 write.binary.word2vec = function(model,filename) {
   filehandle = file(filename,"wb")
   dim = dim(model)
-  writeChar(as.character(dim[1]),filehandle,useBytes=T,eos=NULL)
+  writeChar(as.character(dim[1]),filehandle,eos=NULL)
   writeChar(" ",filehandle,eos=NULL)
   writeChar(as.character(dim[2]),filehandle,eos=NULL)
   writeChar("\n",filehandle,eos=NULL)
@@ -247,7 +263,7 @@ write.binary.word2vec = function(model,filename) {
   names = rownames(model)
   silent = apply(model,1,function(row) {
     # EOS must be null for this to work properly, because, ridiculously,
-    # eos=NULL is the command to tell R *not* to insert a null string
+    # 'eos=NULL' is the command that tells R *not* to insert a null string
     # after a character.
     writeChar(paste0(names[i]," "),filehandle,eos=NULL)
     writeBin(row,filehandle,size=4,endian="little")
@@ -281,14 +297,16 @@ normalize_lengths =function(matrix) {
   t(t(matrix)/magnitudes(matrix))
 }
 
-
 #' Reduce by rownames
 #'
 #' @param matrix A matrix or VectorSpaceModel object
 #' @param words A list of rownames or VectorSpaceModel names
 #'
 #' @return An object of the same class as matrix, consisting
-#' of the rwos that match its rownames.
+#' of the rows that match its rownames.
+#'
+#' Deprecated: use instead VSM[[c("word1","word2",...),average=F]]
+#'
 #' @export
 filter_to_rownames <- function(matrix,words) {
   matrix[rownames(matrix) %in% words,]
@@ -300,11 +318,17 @@ filter_to_rownames <- function(matrix,words) {
 #'
 #' @param x A matrix or VectorSpaceModel object
 #' @param y A vector, matrix or VectorSpaceModel object.
-#' Vectors are coerced to single-row matrices; y must have the
+#'
+#' Vector inputs are coerced to single-row matrices; y must have the
 #' same number of dimensions as x.
 #'
 #'
-#' @return A matrix with one row for each row of x. Columns and their names correspond to y.
+#' @return A matrix. Rows correspond to entries in x; columns to entries in y.
+#'
+#' @examples
+#' subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=F]]
+#' cosineSimilarity(subjects,subjects)
+#'
 #' @export
 cosineSimilarity <- function(x,y){
   # The most straightforward definition would be just:
@@ -312,7 +336,13 @@ cosineSimilarity <- function(x,y){
   # However, we have to do a little type-checking and a few speedups.
 
   if (!(is.matrix(x) || is.matrix(y))) {
-    stop("At least one input must be a matrix")
+    if (length(x)==length(y)) {
+      x = as.matrix(x,ncol=length(x))
+      y = as.matrix(y,ncol=length(y))
+    }
+    else {
+      stop("At least one input must be a matrix")
+    }
   }
 
   if (is.vector(x)) {
@@ -327,20 +357,20 @@ cosineSimilarity <- function(x,y){
   # triangles of a symmetrical matrix, I think.
   tcrossprod(x,y)/
     (sqrt(tcrossprod(rowSums(x^2),rowSums(y^2))))
-
 }
 
 #' Cosine Distance
 #' @description Calculate the cosine distance between two vectors.
 #'
-#' Not an actual distance metric, but can be used in similar ways.
+#' Not an actual distance metric, but can be used in similar contexts.
 #' It is calculated as simply the inverse of cosine similarity,
-#' and falls in a fixed range of 0 to two.
+#' and falls in a fixed range of 0 (identical) to 2 (completely opposite in direction.)
 #'
-#' @param x
-#' @param y
+#' @param x A matrix, VectorSpaceModel, or vector.
+#' @param y A matrix, VectorSpaceModel, or vector.
 #'
 #' @return A matrix whose dimnames are rownames(x), rownames(y)
+#'
 #' @export
 cosineDist <- function(x,y) {
   1-(cosineSimilarity(x,y))
@@ -356,25 +386,20 @@ cosineDist <- function(x,y) {
 #' each row of which is parallel to vector
 #'
 #' If the input is a matrix, the output will be a matrix: if a VectorSpaceModel,
-#' it will be a VectorSpaceModel. Objects in the vector slot are coerced to vector class;
-#' this means it is fine to use a single slice of a
-#' @export
+#' it will be a VectorSpaceModel.
 #'
+#'
+#' @export
 project = function(matrix,vector) {
   # The matrix is a matrix:
   # b is a vector to reproject the matrix to be orthogonal to.
-  # There's probably a more elegant way to do this than each row at a time, but it took me forever
-  # to get this far.
   b = as.vector(vector)
   if (length(b)!=ncol(matrix)) {
     stop("The vector must be the same length as the matrix it is being compared to")
   }
-  # The dot product of the projected matrix is a constant.
-  bdotitself = b %*% b
-
-  projected = crossprod(t(matrix %*% b)/as.vector((b %*% b)) , b)
-  return(projected)
-}
+  matrix@.Data = crossprod(t(matrix %*% b)/as.vector((b %*% b)) , b)
+  return(matrix)
+  }
 
 #' Return a vector rejection for each element in a VectorSpaceModel
 #'
@@ -383,20 +408,22 @@ project = function(matrix,vector) {
 #' of the same length as the VectorSpaceModel.
 #'
 #' @return A new matrix or VectorSpaceModel of the same dimensions as `matrix`,
-#' each row of which is orthogonal to `vector.`
+#' each row of which is orthogonal to the `vector` object.
 #'
 #' This is defined simply as `matrix-project(matrix,vector)`, but having a separate
 #' name may make for cleaner code.
 #'
 #' See `project` for more details.
 #'
+#' @examples
+#' nearest_to(demo_vectors,demo_vectors[["man"]])
+#' genderless = reject(demo_vectors,demo_vectors[["he"]] - demo_vectors[["she"]])
+#' nearest_to(genderless,genderless[["man"]])
+#'
 #' @export
 reject = function(matrix,vector) {
   # The projection of the matrix that _does not_ lie parallel to a given vector.
   val = matrix-project(matrix,vector)
-#  if (class(matrix)=="VectorSpaceModel") {
-#    return(new("VectorSpaceModel",val))
-#  }
   return(val)
 }
 
@@ -409,7 +436,19 @@ reject = function(matrix,vector) {
 #'
 #' @return A vector of distances, with names corresponding to the words
 #' in the parent VectorSpaceModel, of length n.
+#'
+#' @examples
+#'
+#' #Synonyms and similar words
+#' nearest_to(demo_vectors,demo_vectors[["good"]])
+#'
+#' # Something close to the classic king:man::queen:woman;
+#' # What's the equivalent word for a female teacher that "guy" is for
+#' # a male one?
+#' nearest_to(demo_vectors,demo_vectors[["guy"]] - demo_vectors[["man"]] + demo_vectors[["woman"]])
+#'
 #' @export
+
 nearest_to = function(matrix,vector,n=10) {
   dists = cosineDist(matrix,matrix(as.vector(vector),ncol=ncol(matrix)))
   dists_vector = c(dists)
