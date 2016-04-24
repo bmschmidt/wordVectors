@@ -21,7 +21,7 @@ A matrix. Rows correspond to entries in x; columns to entries in y.
 Calculate the cosine similarity of two matrices or a matrix and a vector.
 }
 \examples{
-subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=F]]
+subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=FALSE]]
 cosineSimilarity(subjects,subjects)
 }
 

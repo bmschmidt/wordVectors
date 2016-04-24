@@ -9,3 +9,10 @@ Description: wordVectors wraps the word2vec code for creating vector-space model
 License: Apache License (== 2.0)
 Depends: R (>= 2.14.0)
 LazyData: TRUE
+Imports:
+  graphics,
+  methods,
+  utils
+Suggests:
+  stringi,
+  tsne

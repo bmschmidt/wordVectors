@@ -21,7 +21,7 @@ setClass("VectorSpaceModel",representation("matrix"))
 setMethod("[","VectorSpaceModel",function(x,i,j,...) {
   x@.Data = x@.Data[i,j,drop=F]
   return(x)
-  #new("VectorSpaceModel",x@.Data[i,j,drop=F])
+  #methods::new("VectorSpaceModel",x@.Data[i,j,drop=F])
 })
 
 #' VectorSpaceModel subtraction
@@ -41,7 +41,7 @@ setMethod("[","VectorSpaceModel",function(x,i,j,...) {
 #'
 setMethod("-",signature(e1="VectorSpaceModel",e2="VectorSpaceModel"),function(e1,e2) {
     if (nrow(e1)==nrow(e2) && ncol(e1)==ncol(e2)) {
-      return (new("VectorSpaceModel",e1@.Data-e2@.Data))
+      return (methods::new("VectorSpaceModel",e1@.Data-e2@.Data))
     }
     if (nrow(e2)==1) {
       return(t(t(e1)-as.vector(e2)))
@@ -79,7 +79,7 @@ setMethod("[[","VectorSpaceModel",function(x,i,average=TRUE,...) {
       rownames(val) = rownames(x)[rownames(x) %in% i]
     }
 
-  return(new("VectorSpaceModel",val))
+  return(methods::new("VectorSpaceModel",val))
   }
   else if (typeof(i)=="integer") {
   return(x[i,])
@@ -91,7 +91,7 @@ setMethod("[[","VectorSpaceModel",function(x,i,average=TRUE,...) {
 setMethod("show","VectorSpaceModel",function(object) {
   dims = dim(object)
   cat("A VectorSpaceModel object of ",dims[1]," words and ", dims[2], " vectors\n")
-  show(object@.Data[1:min(nrow(object),10),1:min(ncol(object),6)])
+  methods::show(object@.Data[1:min(nrow(object),10),1:min(ncol(object),6)])
 })
 
 #' Plot a Vector Space Model.
@@ -115,7 +115,7 @@ setMethod("plot","VectorSpaceModel",function(x,y,...) {
   short = x[1:min(300,nrow(x)),]
   m = tsne::tsne(short,...)
   plot(m,type='n',main="A two dimensional reduction of the vector space model using t-SNE")
-  text(m,rownames(short),cex = ((400:1)/200)^(1/3))
+  graphics::text(m,rownames(short),cex = ((400:1)/200)^(1/3))
   rownames(m)=rownames(short)
   silent = m
 })
@@ -127,7 +127,7 @@ setMethod("plot","VectorSpaceModel",function(x,y,...) {
 #' @return An object of class "VectorSpaceModel"
 #' @export as.VectorSpaceModel
 as.VectorSpaceModel = function(matrix) {
-  return(new("VectorSpaceModel",matrix))
+  return(methods::new("VectorSpaceModel",matrix))
 }
 
 #' Read VectorSpaceModel
@@ -159,11 +159,11 @@ read.vectors <- function(filename,vectors=guess_n_cols(),binary=FALSE,...) {
   # Figure out how many dimensions.
   guess_n_cols = function() {
     # if cols is not defined
-    test = read.table(filename,header=F,skip=1,
+    test = utils::read.table(filename,header=F,skip=1,
                        nrows=1,quote="",comment.char="")
   return(ncol(test)-1)
   }
-  vectors_matrix = read.table(filename,header=F,skip=1,
+  vectors_matrix = utils::read.table(filename,header=F,skip=1,
                                colClasses = c("character",rep("numeric",vectors)),
                        quote="",comment.char="",...)
   names(vectors_matrix)[1] = "word"
@@ -171,7 +171,7 @@ read.vectors <- function(filename,vectors=guess_n_cols(),binary=FALSE,...) {
   matrix = as.matrix(vectors_matrix[,colnames(vectors_matrix)!="word"])
   rownames(matrix) = vectors_matrix$word
   colnames(matrix) = paste0("V",1:vectors)
-  return(new("VectorSpaceModel",matrix))
+  return(methods::new("VectorSpaceModel",matrix))
 }
 
 #' Read binary word2vec format files
@@ -214,12 +214,12 @@ read.binary.vectors = function(filename,nrows=Inf) {
   rownames = rep("",rows)
 
   # create progress bar
-  pb <- txtProgressBar(min = 0, max = rows, style = 3)
+  pb <- utils::txtProgressBar(min = 0, max = rows, style = 3)
 
 
   matrix = t(
     vapply(1:rows,function(i) {
-      setTxtProgressBar(pb,i)
+      utils::setTxtProgressBar(pb,i)
 
       rowname=""
       mostRecent=""
@@ -305,7 +305,7 @@ normalize_lengths =function(matrix) {
 #' @return An object of the same class as matrix, consisting
 #' of the rows that match its rownames.
 #'
-#' Deprecated: use instead VSM[[c("word1","word2",...),average=F]]
+#' Deprecated: use instead VSM[[c("word1","word2",...),average=FALSE]]
 #'
 #' @export
 filter_to_rownames <- function(matrix,words) {
@@ -326,7 +326,7 @@ filter_to_rownames <- function(matrix,words) {
 #' @return A matrix. Rows correspond to entries in x; columns to entries in y.
 #'
 #' @examples
-#' subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=F]]
+#' subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=FALSE]]
 #' cosineSimilarity(subjects,subjects)
 #'
 #' @export

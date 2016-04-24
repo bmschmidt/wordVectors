@@ -13,7 +13,9 @@ filter_to_rownames(matrix, words)
 }
 \value{
 An object of the same class as matrix, consisting
-of the rwos that match its rownames.
+of the rows that match its rownames.
+
+Deprecated: use instead VSM[[c("word1","word2",...),average=FALSE]]
 }
 \description{
 Reduce by rownames
