@@ -17,8 +17,7 @@ A new matrix or VectorSpaceModel of the same dimensions as `matrix`,
 each row of which is parallel to vector
 
 If the input is a matrix, the output will be a matrix: if a VectorSpaceModel,
-it will be a VectorSpaceModel. Objects in the vector slot are coerced to vector class;
-this means it is fine to use a single slice of a
+it will be a VectorSpaceModel.
 }
 \description{
 Project each row of an input matrix along a vector.

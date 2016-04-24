@@ -4,9 +4,9 @@
 \alias{train_word2vec}
 \title{Train a model by word2vec.}
 \usage{
-train_word2vec(train_file, output_file = "vectors.txt", vectors = 100,
+train_word2vec(train_file, output_file = "vectors.bin", vectors = 100,
   threads = 1, window = 12, classes = 0, cbow = 0, min_count = 5,
-  iter = 5)
+  iter = 5, force = F)
 }
 \arguments{
 \item{train_file}{Path of a single .txt file for training. Tokens are split on spaces.}
@@ -26,6 +26,8 @@ train_word2vec(train_file, output_file = "vectors.txt", vectors = 100,
 \item{min_count}{Minimum times a word must appear to be included in the samples. High values help reduce model size.}
 
 \item{iter}{Number of passes to make over the corpus in training.}
+
+\item{force}{Whether to overwrite existing files.}
 }
 \value{
 A word2vec object.

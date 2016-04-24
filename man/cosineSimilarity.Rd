@@ -10,13 +10,18 @@ cosineSimilarity(x, y)
 \item{x}{A matrix or VectorSpaceModel object}
 
 \item{y}{A vector, matrix or VectorSpaceModel object.
-Vectors are coerced to single-row matrices; y must have the
+
+Vector inputs are coerced to single-row matrices; y must have the
 same number of dimensions as x.}
 }
 \value{
-A matrix with one row for each row of x. Columns and their names correspond to y.
+A matrix. Rows correspond to entries in x; columns to entries in y.
 }
 \description{
 Calculate the cosine similarity of two matrices or a matrix and a vector.
+}
+\examples{
+subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=F]]
+cosineSimilarity(subjects,subjects)
 }
 

@@ -12,6 +12,8 @@
 }
 \value{
 A VectorSpaceModel
+
+I believe this is necessary, but honestly am not sure.
 }
 \description{
 VectorSpaceModel indexing

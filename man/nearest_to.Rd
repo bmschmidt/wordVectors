@@ -21,4 +21,13 @@ in the parent VectorSpaceModel, of length n.
 \description{
 Return the n closest words in a VectorSpaceModel to a given vector.
 }
+\examples{
+#Synonyms and similar words
+nearest_to(demo_vectors,demo_vectors[["good"]])
+
+# Something close to the classic king:man::queen:woman;
+# What's the equivalent word for a female teacher that "guy" is for
+# a male one?
+nearest_to(demo_vectors,demo_vectors[["guy"]] - demo_vectors[["man"]] + demo_vectors[["woman"]])
+}
 
