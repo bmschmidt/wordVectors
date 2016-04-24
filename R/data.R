@@ -1,0 +1,15 @@
+#' 999 vectors trained on teaching evaluations
+#'
+#' A sample VectorSpaceModel object trained on about 15 million
+#' teaching evaluations, limited to the 999 most common words.
+#' Included for demonstration purposes only: there's only so much you can
+#' do with a 999 dimension vocabulary.
+#'
+#' You're best off downloading a real model to work with,
+#' such as the precompiled vectors distributed by Google
+#' at https://code.google.com/archive/p/word2vec/
+#'
+#' @format A VectorSpaceModel object of 999 words and 500 vectors
+#'
+#' @source Trained by package author.
+"demo_vectors"
