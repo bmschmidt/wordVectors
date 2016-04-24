@@ -19,6 +19,7 @@
 ##' @param cbow If 1, use a continuous-bag-of-words model instead of skip-grams. Defaults to false (recommended for newcomers).
 ##' @param min_count Minimum times a word must appear to be included in the samples. High values help reduce model size.
 ##' @param iter Number of passes to make over the corpus in training.
+##' @param force Whether to overwrite existing files.
 ##' @return A word2vec object.
 ##' @author Jian Li <\email{rweibo@@sina.com}>, Ben Schmidt <\email{bmchmidt@@gmail.com}>
 ##' @references \url{https://code.google.com/p/word2vec/}
@@ -29,11 +30,13 @@
 ##' @examples \dontrun{
 ##' model = word2vec(system.file("examples", "rfaq.txt", package = "tmcn.word2vec"))
 ##' }
-train_word2vec <- function(train_file, output_file = "vectors.txt",vectors=100,threads=1,window=12,
-                           classes=0,cbow=0,min_count=5,iter=5)
+train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,threads=1,window=12,
+                           classes=0,cbow=0,min_count=5,iter=5,force=F)
 {
   if (!file.exists(train_file)) stop("Can't find the training file!")
-  if (file.exists(output_file)) stop("The output file '", output_file , "' already exists: delete or give a new destination.")
+  if (file.exists(output_file) && !force) stop("The output file '",
+                                     output_file ,
+                                     "' already exists: give a new destination or run with 'force=TRUE'.")
 
   train_dir <- dirname(train_file)
 
@@ -50,7 +53,7 @@ train_word2vec <- function(train_file, output_file = "vectors.txt",vectors=100,t
   train_file <- normalizePath(train_file, winslash = "/", mustWork = FALSE)
   output_file <- normalizePath(output_file, winslash = "/", mustWork = FALSE)
   # Whether to output binary, default is 1 means binary.
-  binary = 0
+  binary = 1
 
   OUT <- .C("CWrapper_word2vec",
             train_file = as.character(train_file),
@@ -81,9 +84,13 @@ train_word2vec <- function(train_file, output_file = "vectors.txt",vectors=100,t
 #' @param origin A text file or a directory of text files
 #'  to be used in training the model
 #' @param destination The location for output text.
-#' @param split_characters A list of characters that mark word breaks. By default,
-#' any nonword characters according to the perl regex engine.
+#' @param split_characters If the 'stringi' package is not installed,
+#' A list of characters that mark word breaks. By default,
+#' any nonword characters according to the perl regex engine. If stringi is installed,
+#' this parameter is ignored.
 #' @param tolower Logical. Should uppercase characters be converted to lower?
+#'
+#'
 #'
 #' @export
 #'
@@ -110,16 +117,35 @@ prep_word2vec <- function(origin,destination,
   }
 
   message("Beginning tokenization to text file at ", destination)
+  if (!exists("dir.exists")) {
+    # Use the version from devtools if in R < 3.2.0
+    dir.exists <- function (x)
+    {
+      res <- file.exists(x) & file.info(x)$isdir
+      stats::setNames(res, x)
+    }
+  }
   if (dir.exists(origin)) {
     origin = list.files(origin,recursive=T,full.names = T)
   }
   cat("",file=destination,append=F)
+
+
+  if (require(stringi)) {
+    using_stringi = TRUE
+  } else {
+    warning("Install the stringi package ('install.packages(\"stringi\")') for much more efficient word tokenization")
+  }
   for (filename in origin) {
     message("\n",filename,appendLF=F)
     con = file(filename,open="r")
     while(length(lines <- readLines(con, n = 1000, warn = FALSE))>0) {
       message(".",appendLF=F)
-      words = non_choking_strsplit(lines,split_characters,perl=T)
+      if(using_stringi) {
+        words = unlist(stri_extract_all_words(lines))
+      } else {
+        words = non_choking_strsplit(lines,split_characters,perl=T)
+      }
       if (lowercase) {words=tolower(words)}
       cat(c(words," "),file=destination,append=T)
     }
