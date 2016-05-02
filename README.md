@@ -132,10 +132,10 @@ prep_word2vec("cookbooks","cookbooks.txt",lowercase=T)
 Now we *train* the model. This can take quite a while. In RStudio I've noticed that this appears to hang, but if you check processors it actually still runs. Try it on smaller portions first, and then let it take time: the training function can take hours for tens of thousands of books.
 
 ```{r}
-model = train_word2vec("cookbooks.txt",output="cookbooks.vectors",threads = 3,vectors = 100,window=12)
+model = train_word2vec("cookbooks.txt",output="cookbook_vectors.bin",threads = 3,vectors = 100,window=12)
 ```
 
-* NOTE: If at any point you want to *read in* a previously trained model, you can do so by typing `model =  read.vectors("cookbooks.vectors")`
+* NOTE: If at any point you want to *read in* a previously trained model, you can do so by typing `model =  read.vectors("cookbook_vectors.bin")`
 
 Now we have a model in memory, trained on about 10 million words from 77 cookbooks. What can it tell us about food?
 
