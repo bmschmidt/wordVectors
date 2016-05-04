@@ -1,22 +1,22 @@
-![Travis Build Status](https://travis-ci.org/bmschmidt/wordVectors.svg)
-
-An R package for building and exploring Word2Vec models. (And ideally, other models like GloVe as well, though I haven't gotten around to it.) Includes an altered version of Tomas Mikolov's original C code for word2vec; those wrappers were origally written by Jian Li, and I've only tweaked them a little. Also includes a number of vector manipulation functions (like cosine similarity) for people who don't want to worry too much about vectors.
-
-It doesn't include a full vignette in the code, but if you cut and paste what's below, you can get started by building a model on 77 historical cookbooks from Michigan State University (which I encountered thanks to Alan Liu.)
-
-This package gathers several useful operations for working with vector-space models of text.
-
-If you want to run it without knowing the details, [jump to the quick-start guide](#quick-start).
-
-Right now, it [does not install under Windows 8](https://github.com/bmschmidt/wordVectors/issues/2).  Help appreciated on that thread. OS X, Windows 7, Windows 10, and Linux install perfectly well, AFAIK. 
+An R package for building and exploring word embedding models. ![Travis Build Status](https://travis-ci.org/bmschmidt/wordVectors.svg)
 
 # Description
 
-It does three major things:
+This package does three major things:
 
-1. [Trains word2vec models](#creating-text-vectors) using Jian Li's word2vec code.
-2. [Creates a new `VectorSpaceModel` class to simplify extracting elements of vector space models](#vectorspacemodel-object)
-3. [Bundles several basic functions to execute basic vector space operations like cosine similarity, nearest neighbor, and vector projection.](#useful-matrix-operations)
+1. [Trains word2vec models](#creating-text-vectors) using an extended Jian Li's word2vec code, and reads and writes the binary word2vec format so that you can import pre-trained models such as Google's.
+2. [Creates a new `VectorSpaceModel` class in R that gives a better syntax for exploring a word2vec or GloVe model than native matrix methods.](#vectorspacemodel-object)
+3. [Implements several basic matrix operations that are useful in exploring word embedding models including cosine similarity, nearest neighbor, and vector projection.](#useful-matrix-operations)
+
+### Quick start
+
+For a step-by-step interactive demo that includes installation and training a model on 77 historical cookbooks from Michigan State University, [jump to the quick-start guide](#quick-start).
+
+### Credit
+
+This includes an altered version of Tomas Mikolov's original C code for word2vec; those wrappers were origally written by Jian Li, and I've only tweaked them a little. Several other users have improved that code since I posted it here.
+
+Right now, it [does not (I don't think) install under Windows 8](https://github.com/bmschmidt/wordVectors/issues/2).  Help appreciated on that thread. OS X, Windows 7, Windows 10, and Linux install perfectly well, with one or two exceptions. 
 
 It's not extremely fast, but once the data is loaded in most operations happen in suitable time for exploratory data analysis (under a second on my laptop.)
 
