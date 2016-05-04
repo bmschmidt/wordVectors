@@ -54,6 +54,13 @@ Since frequently an average of two vectors provides a better indication, multipl
 vector_set[["king"]] - vector_set[[c("man","men")]] + vector_set[[c("woman","women")]]
 ```
 
+Sometimes you want to subset *without* averaging. You can do this with the argument `average==FALSE` to 
+the subset.
+
+```{r}
+cosineSimilarity(vector_set[[c("man","men","king"),average=F]], vector_set[[c("woman","women","queen"),average=F]]
+```
+
 ## A few native functions defined on the VectorSpaceModel object.
 
 The native `show` method just prints the dimensions; the native `print` method does some crazy reductions with the T-SNE package (installation required for functionality) because I think T-SNE is a nice way to reduce down the size of vectors.
