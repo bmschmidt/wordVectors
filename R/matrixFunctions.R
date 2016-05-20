@@ -206,10 +206,12 @@ read.binary.vectors = function(filename,nrows=Inf) {
   cols = as.integer(cols)
 
   if(nrows<rows) {
+    message(paste("Reading the first",nrows, "rows of a word2vec binary file of",rows,"rows and",cols,"columns"))
     rows = nrows
+  } else {
+    message(paste("Reading a word2vec binary file of",rows,"rows and",cols,"columns"))
   }
 
-  message(paste("Reading a word2vec binary file of",rows,"rows and",cols,"columns"))
 
   ## Read a row
   rownames = rep("",rows)
@@ -221,7 +223,6 @@ read.binary.vectors = function(filename,nrows=Inf) {
   matrix = t(
     vapply(1:rows,function(i) {
       utils::setTxtProgressBar(pb,i)
-
       rowname=""
       mostRecent=""
       while(TRUE) {
@@ -451,9 +452,10 @@ reject = function(matrix,vector) {
 #' @export
 
 nearest_to = function(matrix,vector,n=10) {
-  dists = cosineDist(matrix,matrix(as.vector(vector),ncol=ncol(matrix)))
-  dists_vector = c(dists)
-  names(dists_vector) = rownames(matrix)
-  sort(dists_vector)[1:n]
+  sims = cosineSimilarity(matrix,matrix(as.vector(vector),ncol=ncol(matrix)))
+  ords = order(-sims[,1])
+  structure(
+    1-sims[ords[1:n]], # Convert from similarity to distance.
+    names=rownames(sims)[ords[1:n]])
 }
 
