@@ -1,22 +1,22 @@
-![Travis Build Status](https://travis-ci.org/bmschmidt/wordVectors.svg)
-
-An R package for building and exploring Word2Vec models. (And ideally, other models like GloVe as well, though I haven't gotten around to it.) Includes an altered version of Tomas Mikolov's original C code for word2vec; those wrappers were origally written by Jian Li, and I've only tweaked them a little. Also includes a number of vector manipulation functions (like cosine similarity) for people who don't want to worry too much about vectors.
-
-It doesn't include a full vignette in the code, but if you cut and paste what's below, you can get started by building a model on 77 historical cookbooks from Michigan State University (which I encountered thanks to Alan Liu.)
-
-This package gathers several useful operations for working with vector-space models of text.
-
-If you want to run it without knowing the details, [jump to the quick-start guide](#quick-start).
-
-Right now, it [does not install under Windows 8](https://github.com/bmschmidt/wordVectors/issues/2).  Help appreciated on that thread. OS X, Windows 7, Windows 10, and Linux install perfectly well, AFAIK. 
+An R package for building and exploring word embedding models. ![Travis Build Status](https://travis-ci.org/bmschmidt/wordVectors.svg)
 
 # Description
 
-It does three major things:
+This package does three major things:
 
-1. [Trains word2vec models](#creating-text-vectors) using Jian Li's word2vec code.
-2. [Creates a new `VectorSpaceModel` class to simplify extracting elements of vector space models](#vectorspacemodel-object)
-3. [Bundles several basic functions to execute basic vector space operations like cosine similarity, nearest neighbor, and vector projection.](#useful-matrix-operations)
+1. [Trains word2vec models](#creating-text-vectors) using an extended Jian Li's word2vec code, and reads and writes the binary word2vec format so that you can import pre-trained models such as Google's.
+2. [Creates a new `VectorSpaceModel` class in R that gives a better syntax for exploring a word2vec or GloVe model than native matrix methods.](#vectorspacemodel-object)
+3. [Implements several basic matrix operations that are useful in exploring word embedding models including cosine similarity, nearest neighbor, and vector projection.](#useful-matrix-operations)
+
+### Quick start
+
+For a step-by-step interactive demo that includes installation and training a model on 77 historical cookbooks from Michigan State University, [jump to the quick-start guide](#quick-start).
+
+### Credit
+
+This includes an altered version of Tomas Mikolov's original C code for word2vec; those wrappers were origally written by Jian Li, and I've only tweaked them a little. Several other users have improved that code since I posted it here.
+
+Right now, it [does not (I don't think) install under Windows 8](https://github.com/bmschmidt/wordVectors/issues/2).  Help appreciated on that thread. OS X, Windows 7, Windows 10, and Linux install perfectly well, with one or two exceptions. 
 
 It's not extremely fast, but once the data is loaded in most operations happen in suitable time for exploratory data analysis (under a second on my laptop.)
 
@@ -52,6 +52,13 @@ Since frequently an average of two vectors provides a better indication, multipl
 
 ```{r}
 vector_set[["king"]] - vector_set[[c("man","men")]] + vector_set[[c("woman","women")]]
+```
+
+Sometimes you want to subset *without* averaging. You can do this with the argument `average==FALSE` to 
+the subset.
+
+```{r}
+cosineSimilarity(vector_set[[c("man","men","king"),average=F]], vector_set[[c("woman","women","queen"),average=F]]
 ```
 
 ## A few native functions defined on the VectorSpaceModel object.
@@ -132,10 +139,10 @@ prep_word2vec("cookbooks","cookbooks.txt",lowercase=T)
 Now we *train* the model. This can take quite a while. In RStudio I've noticed that this appears to hang, but if you check processors it actually still runs. Try it on smaller portions first, and then let it take time: the training function can take hours for tens of thousands of books.
 
 ```{r}
-model = train_word2vec("cookbooks.txt",output="cookbooks.vectors",threads = 3,vectors = 100,window=12)
+model = train_word2vec("cookbooks.txt",output="cookbook_vectors.bin",threads = 3,vectors = 100,window=12)
 ```
 
-* NOTE: If at any point you want to *read in* a previously trained model, you can do so by typing `model =  read.vectors("cookbooks.vectors")`
+* NOTE: If at any point you want to *read in* a previously trained model, you can do so by typing `model =  read.vectors("cookbook_vectors.bin")`
 
 Now we have a model in memory, trained on about 10 million words from 77 cookbooks. What can it tell us about food?
 
