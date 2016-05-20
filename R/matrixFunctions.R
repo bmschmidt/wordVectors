@@ -139,7 +139,7 @@ as.VectorSpaceModel = function(matrix) {
 #' @param vectors The number of dimensions word2vec calculated. Imputed automatically if not specified.
 #' @param binary Read in the binary word2vec form. (Wraps `read.binary.vectors`)
 #' @param ... Further arguments passed to read.table or read.binary.vectors.
-#' Note that both accept 'nrow' as an argument. Word2vec produces
+#' Note that both accept 'nrows' as an argument. Word2vec produces
 #' by default frequency sorted output. Therefore 'read.vectors(...,nrows=500)', for example,
 #' will return the vectors for the top 500 words. This can be useful on machines with limited
 #' memory.
@@ -154,7 +154,7 @@ read.vectors <- function(filename,vectors=guess_n_cols(),binary=FALSE,...) {
   }
 
   if(binary) {
-    return(read.binary.vectors(filename))
+    return(read.binary.vectors(filename,...))
   }
 
   # Figure out how many dimensions.
@@ -359,6 +359,8 @@ cosineSimilarity <- function(x,y){
   # triangles of a symmetrical matrix, I think.
   tcrossprod(x,y)/
     (sqrt(tcrossprod(rowSums(x^2),rowSums(y^2))))
+
+  #
 }
 
 #' Cosine Distance
