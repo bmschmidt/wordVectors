@@ -1,4 +1,4 @@
 
-PKG_CFLAGS = -lm -pthread -O3 -march=native -Wall -funroll-loops -Wno-unused-result -w
+PKG_CFLAGS = -lm -pthread -O3 -march=native -CFLAGS=-mno-avx -Wall -funroll-loops -Wno-unused-result -w
 PKG_LIBS = -pthread
 
