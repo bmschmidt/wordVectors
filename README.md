@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/bmschmidt/wordVectors.svg?branch=master)](https://travis-ci.org/bmschmidt/wordVectors)
 
-An R package for building and exploring word embedding models. ![Travis Build Status](https://travis-ci.org/bmschmidt/wordVectors.svg)
+An R package for building and exploring word embedding models.
 
 # Description
 
