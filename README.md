@@ -1,12 +1,16 @@
+# Word Vectors
+
+[![Build Status](https://travis-ci.org/bmschmidt/wordVectors.svg?branch=master)](https://travis-ci.org/bmschmidt/wordVectors)
+
 An R package for building and exploring word embedding models. ![Travis Build Status](https://travis-ci.org/bmschmidt/wordVectors.svg)
 
 # Description
 
 This package does three major things:
 
-1. [Trains word2vec models](#creating-text-vectors) using an extended Jian Li's word2vec code, and reads and writes the binary word2vec format so that you can import pre-trained models such as Google's.
-2. [Creates a new `VectorSpaceModel` class in R that gives a better syntax for exploring a word2vec or GloVe model than native matrix methods.](#vectorspacemodel-object)
-3. [Implements several basic matrix operations that are useful in exploring word embedding models including cosine similarity, nearest neighbor, and vector projection.](#useful-matrix-operations)
+1. [Trains word2vec models](#creating-text-vectors) using an extended Jian Li's word2vec code; reads and writes the binary word2vec format so that you can import pre-trained models such as Google's; and provides tools for reading only *part* of a model so you can explore a model in memory-limited situations.
+2. [Creates a new `VectorSpaceModel` class in R that gives a better syntax for exploring a word2vec or GloVe model than native matrix methods.](#vectorspacemodel-object) For example, instead of writing `model[rownames(model)=="king",]`, you can write `model[["king"]]`.
+3. [Implements several basic matrix operations that are useful in exploring word embedding models including cosine similarity, nearest neighbor, and vector projection](#useful-matrix-operations) with some caching that makes them much faster than the simplest implementations.
 
 ### Quick start
 
@@ -63,9 +67,7 @@ cosineSimilarity(vector_set[[c("man","men","king"),average=F]], vector_set[[c("w
 
 ## A few native functions defined on the VectorSpaceModel object.
 
-The native `show` method just prints the dimensions; the native `print` method does some crazy reductions with the T-SNE package (installation required for functionality) because I think T-SNE is a nice way to reduce down the size of vectors.
-
-
+The native `show` method just prints the dimensions; the native `print` method does some crazy reductions with the T-SNE package (installation required for functionality) because T-SNE is a nice way to reduce down the size of vectors.
 
 ## Useful matrix operations
 
@@ -79,9 +81,9 @@ Each takes a `VectorSpaceModel` as its first argument. Sometimes, it's appropria
   * `nearest_to(VSM,vector,n)` wraps a particularly common use case for `cosineSimilarity`, of finding the top `n` terms in a `VectorSpaceModel` closest to term m
   * `project(VSM,vector)` takes a `VectorSpaceModel` and returns the portion parallel to the vector `vector`. 
   * `reject(VSM,vector)` is the inverse of `project`; it takes a `VectorSpaceModel` and returns the portion orthogonal to the vector `vector`. This makes it possible, for example, to collapse a vector space by removing certain distinctions of meaning.
-  * `magnitudes` calculated the magnitude of each elmeent in a VSM. 
+  * `magnitudes` calculated the magnitude of each element in a VSM. This is useful in.
   
-All of these functions place the VSM object first. This makes it easy to chain together operations using the `magrittr` package. For example, beginning with a single vector set one could find the nearest words in a set to a version of the vector for "bank" that has been decomposed to remove any semantic similarity to the banking sector.
+All of these functions place the VSM object as the first argument. This makes it easy to chain together operations using the `magrittr` package. For example, beginning with a single vector set one could find the nearest words in a set to a version of the vector for "bank" that has been decomposed to remove any semantic similarity to the banking sector.
 
 ``` {r}
 library(magrittr)
@@ -96,11 +98,11 @@ chronam_vectors %>% nearest_to(not_that_kind_of_bank)
 
 ## Install the wordVectors package.
 
-One of the major hurdles to running word2vec for ordinary people is that it requires compiling a C program. For many people, it may be easier to install it in R.
+One of the major hurdles to running word2vec for ordinary people is that it requires compiling a C program. For many people, it may be easier to install it in R. 
 
 1. If you haven't already, [install R](https://cran.rstudio.com/) and then [install RStudio](https://www.rstudio.com/products/rstudio/download/).
-2. Open	  R, and get a command-line prompt (the thing with a carat on the left hand side.) This is where you'll be copy-pasting commands.
-3. Install (if you don't already have it) the package `devtools` by pasting the	    following
+2. Open	R, and get a command-line prompt (the thing with a `>` on the left hand side.) This is where you'll be copy-pasting commands.
+3. Install (if you don't already have it) the package `devtools` by pasting the	following
     ```R
     install.packages("devtools")
     ```
@@ -110,7 +112,7 @@ One of the major hurdles to running word2vec for ordinary people is that it requ
     library(devtools)
     install_github("bmschmidt/wordVectors")
     ```
-    Windows users may need to install "Rtools" as well: if so, a message to this effect should appear in red on the screen. This may through a very large number of warnings: so long as it says "warning" and not "error", you're probably OK.
+    Windows users may need to install "Rtools" as well: if so, a message to this effect should appear in red on the screen. This may cycle through a very large number of warnings: so long as it says "warning" and not "error", you're probably OK.
 
 ## Testing the setup
 
@@ -119,9 +121,9 @@ We'll test the setup by running a complete VSM. First, download and extract a zi
 ```{r}
 if (!file.exists("cookbooks.zip")) {
   download.file("http://archive.lib.msu.edu/dinfo/feedingamerica/cookbook_text.zip","cookbooks.zip")
-  }
-  unzip("cookbooks.zip",exdir="cookbooks")
-  ```
+}
+unzip("cookbooks.zip",exdir="cookbooks")
+```
 
 Then load the wordVectors package you have already installed.
 ```{r}
@@ -130,13 +132,15 @@ library(wordVectors)
 
 Next, we build a single text file consisting of all the cookbooks converted to lowercase with punctuation removed.
 
-**Note**: this `prep_word2vec` function is *extremely* inefficient compared to text parsing functions written in python or sed or pretty much any language you can think of. I'm only including it for Windows compatibility of examples. If you can create a file with punctuation already stripped or separated any other way, I **strongly** recommend doing it that way.  But if you're working with a few hundred documents, this will get the job done, slowly. On the cookbooks, it should take a couple minutes. (For reference: in a console,  `perl -pe 's/[^A-Za-z_0-9 \n]/ /g;' cookbooks/* > cookbooks.txt` will do the same thing in a couple *seconds*. Seriously, I have no idea how to write fast R text-parsing code.)
+**Note**: this `prep_word2vec` function is *extremely* inefficient compared to text parsing functions written in python or sed or pretty much any language you can think of. I'm only including it for Windows compatibility of examples and non-programmers. If you know how to create a file with punctuation already stripped or separated any other way, I **strongly** recommend doing it that way.  But if you're working with a few hundred documents, this will get the job done, slowly. On the cookbooks, it should take a couple minutes. (For reference: in a console,  `perl -pe 's/[^A-Za-z_0-9 \n]/ /g;' cookbooks/* > cookbooks.txt` will do the same thing in a couple *seconds*. Seriously, I have no idea how to write fast R text-parsing code.)
 
 ```{r}
 prep_word2vec("cookbooks","cookbooks.txt",lowercase=T)
 ```
 
 Now we *train* the model. This can take quite a while. In RStudio I've noticed that this appears to hang, but if you check processors it actually still runs. Try it on smaller portions first, and then let it take time: the training function can take hours for tens of thousands of books.
+
+The 'threads' parameter is the number of processors to use on your computer.
 
 ```{r}
 model = train_word2vec("cookbooks.txt",output="cookbook_vectors.bin",threads = 3,vectors = 100,window=12)
