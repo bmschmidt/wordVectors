@@ -253,6 +253,10 @@ read.binary.vectors = function(filename,nrows=Inf) {
 #' @return Nothing
 #' @export
 write.binary.word2vec = function(model,filename) {
+  if (!endsWith(filename,".bin")) {
+    warning("Your filename doesn't end with '.bin'; any subsequent calls to read.vectors()
+            will fail unless you set 'binary' in the function args to TRUE.")
+  }
   filehandle = file(filename,"wb")
   dim = dim(model)
   writeChar(as.character(dim[1]),filehandle,eos=NULL)
