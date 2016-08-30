@@ -4,23 +4,69 @@
 #' The base object is simply a matrix with columns describing dimensions and unique rownames
 #' as the names of vectors. This package gives a number of convenience functions for printing
 #' and, most importantly, accessing these objects.
+#' @slot magnitudes The cached sum-of-squares for each row in the matrix. Can be cached to
+#' speed up similarity calculations
 #' @return An object of class "VectorSpaceModel"
 #' @exportClass VectorSpaceModel
-setClass("VectorSpaceModel",representation("matrix"))
+setClass("VectorSpaceModel",slots = c(".cache"="environment"),contains="matrix")
+#setClass("NormalizedVectorSpaceModel",contains="VectorSpaceModel")
+
+# This is Steve Lianoglu's method for associating a cache with an object
+# http://r.789695.n4.nabble.com/Change-value-of-a-slot-of-an-S4-object-within-a-method-td2338484.html
+setMethod("initialize", "VectorSpaceModel",
+          function(.Object, ..., .cache=new.env()) {
+            callNextMethod(.Object, .cache=.cache, ...)
+          })
+
+#' Square Magnitudes with caching
+#'
+#' @param VectorSpaceModel A matrix or VectorSpaceModel object
+#' @description square_magnitudes Returns the square magnitudes and
+#' caches them if necessary
+#' @return A vector of the square magnitudes for each row
+#' @keywords internal
+square_magnitudes = function(object) {
+  if (class(object)=="VectorSpaceModel") {
+      if (.hasSlot(object, ".cache")) {
+      if (is.null(object@.cache$magnitudes)) {
+        object@.cache$magnitudes = rowSums(object^2)
+      }
+      return(object@.cache$magnitudes)
+      } else {
+        message("You seem to be using a VectorSpaceModel saved from an earlier version of this package.")
+        message("To turn on caching, which greatly speeds up queries, type")
+        message("yourobjectname@.cache = new.env()")
+        return(rowSums(object^2))
+      }
+  } else {
+    return(rowSums(object^2))
+  }
+}
 
 
 #' VectorSpaceModel indexing
 #'
-#  @description Reduce a VectorSpaceModel to a smaller one
+#' @description Reduce a VectorSpaceModel to a smaller one
 #' @param x The vectorspace model to subset
 #' @param i The row numbers to extract
 #' @param j The column numbers to extract
-#'
+#' @param j Other arguments to extract (unlikely to be useful).
+#' @param drop Whether to drop columns. This parameter is ignored.
 #' @return A VectorSpaceModel
 #'
-setMethod("[","VectorSpaceModel",function(x,i,j) {
-  x@.Data = x@.Data[i,j,drop=F]
-  return(x)
+setMethod("[","VectorSpaceModel",function(x,i,j,...,drop) {
+  nextup = callNextMethod()
+  if (!is.matrix(nextup)) {
+    # A verbose way of effectively changing drop from TRUE to FALSE;
+    # I don't want one-dimensional matrices turned to vectors.
+    # I can't figure out how to do this more simply
+    if (missing(j)) {
+      nextup = matrix(nextup,ncol=ncol(x))
+    } else {
+      nextup = matrix(nextup,ncol=j)
+    }
+  }
+  new("VectorSpaceModel",nextup)
 })
 
 #' VectorSpaceModel subtraction
@@ -40,10 +86,12 @@ setMethod("[","VectorSpaceModel",function(x,i,j) {
 #'
 setMethod("-",signature(e1="VectorSpaceModel",e2="VectorSpaceModel"),function(e1,e2) {
     if (nrow(e1)==nrow(e2) && ncol(e1)==ncol(e2)) {
-      return (methods::new("VectorSpaceModel",e1@.Data-e2@.Data))
+      return (methods::new("VectorSpaceModel",callNextMethod()))
     }
     if (nrow(e2)==1) {
-      return(t(t(e1)-as.vector(e2)))
+      return(
+        new("VectorSpaceModel",e1 - matrix(rep(e2,each=nrow(e1)),nrow=nrow(e1)))
+        )
     }
     stop("Vector space model subtraction must use models of equal dimensions")
 })
@@ -63,9 +111,8 @@ setMethod("[[","VectorSpaceModel",function(x,i,average=TRUE) {
   # for which the rowname is "king"; x[[c("king","queen")]] gives
   # the midpoint of x[["king"]] and x[["queen"]], which can occasionally
   # be useful.
-  if(typeof(i)=="character")
-  {
-    matching_rows = x@.Data[rownames(x) %in% i,,drop=F]
+  if(typeof(i)=="character") {
+    matching_rows = x[rownames(x) %in% i,]
     if (average) {
       val = matrix(
               colMeans(matching_rows)
@@ -80,6 +127,7 @@ setMethod("[[","VectorSpaceModel",function(x,i,average=TRUE) {
 
   return(methods::new("VectorSpaceModel",val))
   }
+
   else if (typeof(i)=="integer") {
   return(x[i,])
   } else {
@@ -90,7 +138,7 @@ setMethod("[[","VectorSpaceModel",function(x,i,average=TRUE) {
 setMethod("show","VectorSpaceModel",function(object) {
   dims = dim(object)
   cat("A VectorSpaceModel object of ",dims[1]," words and ", dims[2], " vectors\n")
-  methods::show(object@.Data[1:min(nrow(object),10),1:min(ncol(object),6)])
+  methods::show(unclass(object[1:min(nrow(object),10),1:min(ncol(object),6)]))
 })
 
 #' Plot a Vector Space Model.
@@ -139,7 +187,7 @@ as.VectorSpaceModel = function(matrix) {
 #' @param vectors The number of dimensions word2vec calculated. Imputed automatically if not specified.
 #' @param binary Read in the binary word2vec form. (Wraps `read.binary.vectors`)
 #' @param ... Further arguments passed to read.table or read.binary.vectors.
-#' Note that both accept 'nrows' as an argument. Word2vec produces
+#' Note that both accept 'nrow' as an argument. Word2vec produces
 #' by default frequency sorted output. Therefore 'read.vectors(...,nrows=500)', for example,
 #' will return the vectors for the top 500 words. This can be useful on machines with limited
 #' memory.
@@ -182,13 +230,15 @@ read.vectors <- function(filename,vectors=guess_n_cols(),binary=FALSE,...) {
 #' Word2vec sorts by frequency, so limiting to the first 1000 rows will
 #' give the thousand most-common words; it can be useful not to load
 #' the whole matrix into memory
-#'
-#' @return A word2vec object
+#' @param cols The column numbers to read. Default is "All";
+#' if you are in a memory-limited environment,
+#' you can limit the number of columns you read in by giving a vector of column integers
+#' @return A VectorSpaceModel object
 #' @export
 #'
 #'
 
-read.binary.vectors = function(filename,nrows=Inf) {
+read.binary.vectors = function(filename,nrows=Inf,cols="All") {
   a = file(filename,'rb')
   rows = ""
   mostRecent=""
@@ -198,18 +248,18 @@ read.binary.vectors = function(filename,nrows=Inf) {
   }
   rows = as.integer(rows)
 
-  cols = ""
+  col_number = ""
   while(mostRecent!="\n") {
     mostRecent = readChar(a,1)
-    cols = paste0(cols,mostRecent)
+    col_number = paste0(col_number,mostRecent)
   }
-  cols = as.integer(cols)
+  col_number = as.integer(col_number)
 
   if(nrows<rows) {
-    message(paste("Reading the first",nrows, "rows of a word2vec binary file of",rows,"rows and",cols,"columns"))
+    message(paste("Reading the first",nrows, "rows of a word2vec binary file of",rows,"rows and",col_number,"columns"))
     rows = nrows
   } else {
-    message(paste("Reading a word2vec binary file of",rows,"rows and",cols,"columns"))
+    message(paste("Reading a word2vec binary file of",rows,"rows and",col_number,"columns"))
   }
 
 
@@ -219,6 +269,11 @@ read.binary.vectors = function(filename,nrows=Inf) {
   # create progress bar
   pb <- utils::txtProgressBar(min = 0, max = rows, style = 3)
 
+
+  returned_columns = col_number
+  if (is.integer(cols)) {
+    returned_columns = length(cols)
+  }
 
   matrix = t(
     vapply(1:rows,function(i) {
@@ -234,9 +289,12 @@ read.binary.vectors = function(filename,nrows=Inf) {
         }
       }
       rownames[i] <<- rowname
-      row = readBin(a,numeric(),size=4,n=cols,endian="little")
+      row = readBin(a,numeric(),size=4,n=col_number,endian="little")
+      if (is.integer(cols)) {
+        return(row[cols])
+      }
       return(row)
-    },as.array(rep(0,cols)))
+    },as.array(rep(0,returned_columns)))
   )
   close(pb)
   close(a)
@@ -299,7 +357,7 @@ magnitudes <- function(matrix) {
 #'
 #' @return An object of the same class as matrix
 #' @export
-normalize_lengths =function(matrix) {
+normalize_lengths = function(matrix) {
   t(t(matrix)/magnitudes(matrix))
 }
 
@@ -315,6 +373,8 @@ normalize_lengths =function(matrix) {
 #'
 #' @export
 filter_to_rownames <- function(matrix,words) {
+  warning('The function`filter_to_rownames` is deprecated and will be removed in a later version.
+          Use instead `VSM[[c("word1","word2",...),average=FALSE]]`')
   matrix[rownames(matrix) %in% words,]
 }
 
@@ -333,7 +393,12 @@ filter_to_rownames <- function(matrix,words) {
 #'
 #' @examples
 #' subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=FALSE]]
-#' cosineSimilarity(subjects,subjects)
+#' similarities = cosineSimilarity(subjects,subjects)
+#'
+#' subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=TRUE]]
+#' new_subject_list = nearest_to(demo_vectors,subjects,20)
+#' new_subjects = demo_vectors[[names(new_subject_list),average=FALSE]]
+#' plot(hclust(as.dist(cosineDist(new_subjects,new_subjects))))
 #'
 #' @export
 cosineSimilarity <- function(x,y){
@@ -355,14 +420,14 @@ cosineSimilarity <- function(x,y){
     x = as.matrix(x,ncol=ncol(y))
   }
   if (is.vector(y)) {
-    x = as.matrix(y,ncol=ncol(x))
+    y = as.matrix(y,ncol=ncol(x))
   }
 
   # Using tcrossprod should be faster than transposing manually.
   # Of course, this is still double-inefficient b/c we're calculating both
   # triangles of a symmetrical matrix, I think.
   tcrossprod(x,y)/
-    (sqrt(tcrossprod(rowSums(x^2),rowSums(y^2))))
+    (sqrt(tcrossprod(square_magnitudes(x),square_magnitudes(y))))
 
   #
 }
@@ -391,7 +456,7 @@ cosineDist <- function(x,y) {
 #' of the same length as the VectorSpaceModel.
 #'
 #' @return A new matrix or VectorSpaceModel of the same dimensions as `matrix`,
-#' each row of which is parallel to vector
+#' each row of which is parallel to vector.
 #'
 #' If the input is a matrix, the output will be a matrix: if a VectorSpaceModel,
 #' it will be a VectorSpaceModel.
@@ -405,8 +470,8 @@ project = function(matrix,vector) {
   if (length(b)!=ncol(matrix)) {
     stop("The vector must be the same length as the matrix it is being compared to")
   }
-  matrix@.Data = crossprod(t(matrix %*% b)/as.vector((b %*% b)) , b)
-  return(matrix)
+  newmat = crossprod(t(matrix %*% b)/as.vector((b %*% b)) , b)
+  return(new("VectorSpaceModel",matrix))
   }
 
 #' Return a vector rejection for each element in a VectorSpaceModel

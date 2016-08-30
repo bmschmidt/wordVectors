@@ -6,7 +6,3 @@ r:
   - release
   - devel
 
-branches:
-  only:
-    - master
-    - dev
