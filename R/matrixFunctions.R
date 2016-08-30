@@ -18,14 +18,13 @@ setMethod("initialize", "VectorSpaceModel",
             callNextMethod(.Object, .cache=.cache, ...)
           })
 
-#' Cached Square Magnitudes
+#' Square Magnitudes with caching
 #'
-#' @param VectorSpaceModel
+#' @param VectorSpaceModel A matrix or VectorSpaceModel object
 #' @description square_magnitudes Returns the square magnitudes and
 #' caches them if necessary
 #' @return A vector of the square magnitudes for each row
 #' @keywords internal
-#' @examples
 square_magnitudes = function(object) {
   if (class(object)=="VectorSpaceModel") {
       if (.hasSlot(object, ".cache")) {
@@ -47,10 +46,11 @@ square_magnitudes = function(object) {
 
 #' VectorSpaceModel indexing
 #'
-#  @description Reduce a VectorSpaceModel to a smaller one
+#' @description Reduce a VectorSpaceModel to a smaller one
 #' @param x The vectorspace model to subset
 #' @param i The row numbers to extract
 #' @param j The column numbers to extract
+#' @param j Other arguments to extract (unlikely to be useful).
 #' @param drop Whether to drop columns. This parameter is ignored.
 #' @return A VectorSpaceModel
 #'
@@ -451,7 +451,7 @@ cosineDist <- function(x,y) {
 #' of the same length as the VectorSpaceModel.
 #'
 #' @return A new matrix or VectorSpaceModel of the same dimensions as `matrix`,
-#' each row of which is parallel to vector
+#' each row of which is parallel to vector.
 #'
 #' If the input is a matrix, the output will be a matrix: if a VectorSpaceModel,
 #' it will be a VectorSpaceModel.

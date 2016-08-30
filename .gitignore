@@ -6,3 +6,6 @@ inst/extdata/
 hum2vec.Rproj
 src/*.o
 src/*.so
+cookbooks cookbooks.txt cookbooks.vectors cookbooks.zip
+cookbooks*
+etc
