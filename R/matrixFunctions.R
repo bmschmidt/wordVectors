@@ -248,18 +248,18 @@ read.binary.vectors = function(filename,nrows=Inf,cols="All") {
   }
   rows = as.integer(rows)
 
-  cols = ""
+  col_number = ""
   while(mostRecent!="\n") {
     mostRecent = readChar(a,1)
-    cols = paste0(cols,mostRecent)
+    col_number = paste0(col_number,mostRecent)
   }
-  cols = as.integer(cols)
+  col_number = as.integer(col_number)
 
   if(nrows<rows) {
-    message(paste("Reading the first",nrows, "rows of a word2vec binary file of",rows,"rows and",cols,"columns"))
+    message(paste("Reading the first",nrows, "rows of a word2vec binary file of",rows,"rows and",col_number,"columns"))
     rows = nrows
   } else {
-    message(paste("Reading a word2vec binary file of",rows,"rows and",cols,"columns"))
+    message(paste("Reading a word2vec binary file of",rows,"rows and",col_number,"columns"))
   }
 
 
@@ -269,6 +269,11 @@ read.binary.vectors = function(filename,nrows=Inf,cols="All") {
   # create progress bar
   pb <- utils::txtProgressBar(min = 0, max = rows, style = 3)
 
+
+  returned_columns = col_number
+  if (is.integer(cols)) {
+    returned_columns = length(cols)
+  }
 
   matrix = t(
     vapply(1:rows,function(i) {
@@ -284,12 +289,12 @@ read.binary.vectors = function(filename,nrows=Inf,cols="All") {
         }
       }
       rownames[i] <<- rowname
-      row = readBin(a,numeric(),size=4,n=cols,endian="little")
-      if (cols != "All") {
+      row = readBin(a,numeric(),size=4,n=col_number,endian="little")
+      if (is.integer(cols)) {
         return(row[cols])
       }
       return(row)
-    },as.array(rep(0,cols)))
+    },as.array(rep(0,returned_columns)))
   )
   close(pb)
   close(a)
