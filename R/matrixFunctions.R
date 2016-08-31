@@ -471,7 +471,7 @@ project = function(matrix,vector) {
     stop("The vector must be the same length as the matrix it is being compared to")
   }
   newmat = crossprod(t(matrix %*% b)/as.vector((b %*% b)) , b)
-  return(new("VectorSpaceModel",matrix))
+  return(new("VectorSpaceModel",newmat))
   }
 
 #' Return a vector rejection for each element in a VectorSpaceModel
