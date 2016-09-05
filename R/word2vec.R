@@ -156,3 +156,33 @@ prep_word2vec <- function(origin,destination,
   silent = destination
 }
 
+
+#' To convert words to phrases
+#'
+#' This function attempts to learn phrases given a text document.
+#' It does so by progressively joining adjacent pairs of words with an '_' character. 
+#' You can then run the code multiple times to create multiword phrases.
+#'
+#' @title To convert words to phrases
+#' @param train_file Path of a single .txt file for training. Tokens are split on spaces.
+#' @param output_file Path of output file
+#' @param debug_mode debug mode
+#' @param min_count Minimum times a word must appear to be included in the samples. High values help reduce model size.
+#' @param threshold threshold value
+#' @return text file with unigrams and bigrams 
+#' @export
+#' @examples
+#' \dontrun{
+#' model=word2phrase("text8","vec.txt")
+#' }
+
+word2phrase=function(train_file,output_file,debug_mode=0,min_count=0,threshold=0)
+{
+  if (!file.exists(train_file)) stop("Can't find the training file!")
+  if (file.exists(output_file) && !force) stop("The output file '",
+                                               output_file ,
+                                               "' already exists: give a new destination or run with 'force=TRUE'.")
+  
+  OUT=.C("word2phrase",rtrain_file=as.character(train_file),rdebug_mode=as.integer(debug_mode),routput_file=as.character(output_file),rmin_count=as.integer(min_count),rthreshold=as.double(threshold))
+ 
+}
