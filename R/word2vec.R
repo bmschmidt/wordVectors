@@ -88,14 +88,19 @@ train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,t
 #' any nonword characters according to the perl regex engine. If stringi is installed,
 #' this parameter is ignored.
 #' @param lowercase Logical. Should uppercase characters be converted to lower?
-#'
-#'
+#' @param bundle_ngrams Integer. Statistically significant phrases of up to this many words
+#' will be joined with underscores: e.g., "United States" will usually be changed to "United_States"
+#' if it appears frequently in the corpus. This calls word2phrase once if bundle_ngrams is 2,
+#' twice if bundle_ngrams is 3, and so forth; see that function for more details.
+#' @param ... Further arguments passed to word2phrase when bundle_ngrams is
+#' greater than 1.
 #'
 #' @export
 #'
 #' @return The file name (silently).
 prep_word2vec <- function(origin,destination,
-                          split_characters="\\W",lowercase=F)
+                          split_characters="\\W",lowercase=F,
+                          bundle_ngrams=1,...)
 {
   # strsplit chokes on large lines. I would not have gone down this path if I knew this
   # to begin with.
@@ -153,36 +158,60 @@ prep_word2vec <- function(origin,destination,
     cat(c("\n"),file=destination,append=T)
 
   }
-  silent = destination
+
+  # Save the ultimate output
+  real_destination_name = destination
+
+  # Repeatedly build bigrams, trigrams, etc.
+  if (bundle_ngrams > 1) {
+    while(bundle_ngrams > 1) {
+      old_destination = destination
+      destination = paste0(destination,"_")
+      word2phrase(old_destination,destination,...)
+      file.remove(old_destination)
+      bundle_ngrams = bundle_ngrams - 1
+    }
+    file.rename(destination,real_destination_name)
+  }
+
+  silent = real_destination_name
 }
 
 
-#' To convert words to phrases
+#' Convert words to phrases in a text file.
 #'
 #' This function attempts to learn phrases given a text document.
-#' It does so by progressively joining adjacent pairs of words with an '_' character. 
+#' It does so by progressively joining adjacent pairs of words with an '_' character.
 #' You can then run the code multiple times to create multiword phrases.
+#' Wrapper around code from the Mikolov's original word2vec release.
 #'
-#' @title To convert words to phrases
-#' @param train_file Path of a single .txt file for training. Tokens are split on spaces.
+#' @title Convert words to phrases
+#' @author Tomas Mikolov
+#' @param train_file Path of a single .txt file for training.
+#'   Tokens are split on spaces.
 #' @param output_file Path of output file
-#' @param debug_mode debug mode
-#' @param min_count Minimum times a word must appear to be included in the samples. High values help reduce model size.
-#' @param threshold threshold value
-#' @return text file with unigrams and bigrams 
+#' @param debug_mode debug mode. Must be 0, 1 or 2. 0 is silent; 1 print summary statistics;
+#'  prints progress regularly.
+#' @param min_count Minimum times a word must appear to be included in the samples.
+#'   High values help reduce model size.
+#' @param threshold Threshold value for determining if pairs of words are phrases.
+#' @return The name of output_file, the trained file where common phrases are now joined.
 #' @export
 #' @examples
 #' \dontrun{
 #' model=word2phrase("text8","vec.txt")
 #' }
 
-word2phrase=function(train_file,output_file,debug_mode=0,min_count=0,threshold=0)
+word2phrase=function(train_file,output_file,debug_mode=0,min_count=5,threshold=100,force=FALSE)
 {
   if (!file.exists(train_file)) stop("Can't find the training file!")
   if (file.exists(output_file) && !force) stop("The output file '",
                                                output_file ,
                                                "' already exists: give a new destination or run with 'force=TRUE'.")
-  
-  OUT=.C("word2phrase",rtrain_file=as.character(train_file),rdebug_mode=as.integer(debug_mode),routput_file=as.character(output_file),rmin_count=as.integer(min_count),rthreshold=as.double(threshold))
- 
+  OUT=.C("word2phrase",rtrain_file=as.character(train_file),
+         rdebug_mode=as.integer(debug_mode),
+         routput_file=as.character(output_file),
+         rmin_count=as.integer(min_count),
+         rthreshold=as.double(threshold))
+  return(output_file)
 }

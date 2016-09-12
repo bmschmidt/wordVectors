@@ -2,36 +2,43 @@
 % Please edit documentation in R/word2vec.R
 \name{word2phrase}
 \alias{word2phrase}
-\title{To convert words to phrases}
+\title{Convert words to phrases}
 \usage{
-word2phrase(train_file, output_file, debug_mode = 0, min_count = 0,
-  threshold = 0)
+word2phrase(train_file, output_file, debug_mode = 0, min_count = 5,
+  threshold = 100, force = FALSE)
 }
 \arguments{
-\item{train_file}{Path of a single .txt file for training. Tokens are split on spaces.}
+\item{train_file}{Path of a single .txt file for training.
+Tokens are split on spaces.}
 
 \item{output_file}{Path of output file}
 
-\item{debug_mode}{debug mode}
+\item{debug_mode}{debug mode. Must be 0, 1 or 2. 0 is silent; 1 print summary statistics;
+prints progress regularly.}
 
-\item{min_count}{Minimum times a word must appear to be included in the samples. High values help reduce model size.}
+\item{min_count}{Minimum times a word must appear to be included in the samples.
+High values help reduce model size.}
 
-\item{threshold}{threshold value}
+\item{threshold}{Threshold value for determining if pairs of words are phrases.}
 }
 \value{
-text file with unigrams and bigrams
+The name of output_file, the trained file where common phrases are now joined.
 }
 \description{
-To convert words to phrases
+Convert words to phrases in a text file.
 }
 \details{
 This function attempts to learn phrases given a text document.
-It does so by progressively joining adjacent pairs of words with an '_' character. 
+It does so by progressively joining adjacent pairs of words with an '_' character.
 You can then run the code multiple times to create multiword phrases.
+Wrapper around code from the Mikolov's original word2vec release.
 }
 \examples{
 \dontrun{
 model=word2phrase("text8","vec.txt")
 }
+}
+\author{
+Tomas Mikolov
 }
 

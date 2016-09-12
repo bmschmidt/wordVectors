@@ -5,7 +5,7 @@
 \title{Prepare documents for word2Vec}
 \usage{
 prep_word2vec(origin, destination, split_characters = "\\\\W",
-  lowercase = F)
+  lowercase = F, bundle_ngrams = 1, ...)
 }
 \arguments{
 \item{origin}{A text file or a directory of text files
@@ -19,6 +19,14 @@ any nonword characters according to the perl regex engine. If stringi is install
 this parameter is ignored.}
 
 \item{lowercase}{Logical. Should uppercase characters be converted to lower?}
+
+\item{bundle_ngrams}{Integer. Statistically significant phrases of up to this many words
+will be joined with underscores: e.g., "United States" will usually be changed to "United_States"
+if it appears frequently in the corpus. This calls word2phrase once if bundle_ngrams is 2,
+twice if bundle_ngrams is 3, and so forth; see that function for more details.}
+
+\item{...}{Further arguments passed to word2phrase when bundle_ngrams is
+greater than 1.}
 }
 \value{
 The file name (silently).
