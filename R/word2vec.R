@@ -138,7 +138,7 @@ prep_word2vec <- function(origin,destination,
   if (require(stringi)) {
     using_stringi = TRUE
   } else {
-    warning("Install the stringi package ('install.packages(\"stringi\")') for much more efficient word tokenization")
+    warning("Install the stringi package ('install.packages(\"stringi\")') for more efficient word tokenization")
   }
   for (filename in origin) {
     message("\n",filename,appendLF=F)
@@ -173,7 +173,6 @@ prep_word2vec <- function(origin,destination,
     }
     file.rename(destination,real_destination_name)
   }
-
   silent = real_destination_name
 }
 
