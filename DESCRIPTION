@@ -19,5 +19,6 @@ Imports:
     utils
 Suggests:
     stringi,
-    tsne
+    tsne,
+    magrittr
 RoxygenNote: 5.0.1
