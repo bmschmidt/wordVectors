@@ -9,3 +9,4 @@ src/*.so
 cookbooks cookbooks.txt cookbooks.vectors cookbooks.zip
 cookbooks*
 etc
+cookbook_vectors.bin
