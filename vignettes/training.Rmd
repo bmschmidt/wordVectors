@@ -18,12 +18,12 @@ This vignette walks you through training a word2vec model, and using that model 
 If you have not installed this package, paste the below.
 
 ```{r}
-if (!require(wordVectors) {
+if (!require(wordVectors)) {
   if (!(require(devtools))) {
     install.packages("devtools")
   }
   devtools::install_github("bmschmidt/wordVectors")
-})
+}
 
 
 ```
@@ -78,6 +78,14 @@ A few notes:
 6. If at any point you want to *read in* a previously trained model, you can do so by typing `model =  read.vectors("cookbook_vectors.bin")`.
 
 Now we have a model in memory, trained on about 10 million words from 77 cookbooks. What can it tell us about food?
+
+## Inspection
+
+First, let's inspect it to see how it looks.
+
+```{r}
+model
+```
 
 ## Similarity searches
 
