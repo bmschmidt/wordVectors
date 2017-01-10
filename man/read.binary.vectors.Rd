@@ -4,7 +4,8 @@
 \alias{read.binary.vectors}
 \title{Read binary word2vec format files}
 \usage{
-read.binary.vectors(filename, nrows = Inf, cols = "All")
+read.binary.vectors(filename, nrows = Inf, cols = "All",
+  rowname_list = NULL, rowname_regexp = NULL)
 }
 \arguments{
 \item{filename}{A file in the binary word2vec format to import.}
@@ -12,11 +13,18 @@ read.binary.vectors(filename, nrows = Inf, cols = "All")
 \item{nrows}{Optionally, a number of rows to stop reading after.
 Word2vec sorts by frequency, so limiting to the first 1000 rows will
 give the thousand most-common words; it can be useful not to load
-the whole matrix into memory}
+the whole matrix into memory. This limit is applied BEFORE `name_list` and
+`name_regexp`.}
 
 \item{cols}{The column numbers to read. Default is "All";
 if you are in a memory-limited environment,
 you can limit the number of columns you read in by giving a vector of column integers}
+
+\item{name_list}{A whitelist of words. If you wish to read in only a few dozen words,
+all other rows will be skipped and only these read in.}
+
+\item{name_regexp}{A regular expression specifying a pattern for rows to read in. Row
+names matching that pattern will be included in the read; all others will be skipped.}
 }
 \value{
 A VectorSpaceModel object

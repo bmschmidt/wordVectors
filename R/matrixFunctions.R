@@ -229,16 +229,22 @@ read.vectors <- function(filename,vectors=guess_n_cols(),binary=FALSE,...) {
 #' @param nrows Optionally, a number of rows to stop reading after.
 #' Word2vec sorts by frequency, so limiting to the first 1000 rows will
 #' give the thousand most-common words; it can be useful not to load
-#' the whole matrix into memory
+#' the whole matrix into memory. This limit is applied BEFORE `name_list` and
+#' `name_regexp`.
 #' @param cols The column numbers to read. Default is "All";
 #' if you are in a memory-limited environment,
 #' you can limit the number of columns you read in by giving a vector of column integers
+#' @param name_list A whitelist of words. If you wish to read in only a few dozen words,
+#' all other rows will be skipped and only these read in.
+#' @param name_regexp A regular expression specifying a pattern for rows to read in. Row
+#' names matching that pattern will be included in the read; all others will be skipped.
 #' @return A VectorSpaceModel object
 #' @export
 #'
 #'
 
-read.binary.vectors = function(filename,nrows=Inf,cols="All") {
+read.binary.vectors = function(filename,nrows=Inf,cols="All", rowname_list = NULL, rowname_regexp = NULL) {
+  if (!is.null(rowname_list) && !is.null(rowname_regexp)) {stop("Specify a whitelist of names or a regular expression to be applied to all input, not both.")}
   a = file(filename,'rb')
   rows = ""
   mostRecent=""
@@ -275,27 +281,51 @@ read.binary.vectors = function(filename,nrows=Inf,cols="All") {
     returned_columns = length(cols)
   }
 
-  matrix = t(
-    vapply(1:rows,function(i) {
-      utils::setTxtProgressBar(pb,i)
-      rowname=""
-      mostRecent=""
-      while(TRUE) {
-        mostRecent = readChar(a,1)
-        if (mostRecent==" ") {break}
-        if (mostRecent!="\n") {
-          # Some versions end with newlines, some don't.
-          rowname = paste0(rowname,mostRecent)
+  read_row = function(i) {
+    utils::setTxtProgressBar(pb,i)
+    rowname=""
+    mostRecent=""
+    while(TRUE) {
+      mostRecent = readChar(a,1)
+      if (mostRecent==" ") {break}
+      if (mostRecent!="\n") {
+        # Some versions end with newlines, some don't.
+        rowname = paste0(rowname,mostRecent)
+      }
+    }
+    rownames[i] <<- rowname
+    row = readBin(a,numeric(),size=4,n=col_number,endian="little")
+    if (is.integer(cols)) {
+      return(row[cols])
+    }
+    return(row)
+  }
+
+  # When the size is fixed, it's faster to do as a vapply than as a for loop.
+  if (is.null(rowname_list) && is.null(rowname_regexp)) {
+    matrix = t(
+      vapply(1:rows,read_row,as.array(rep(0,returned_columns)))
+    )
+  } else {
+    elements = list()
+    mynames = c()
+    for (i in 1:rows) {
+      row = read_row(i)
+      if (!is.null(rowname_list)) {
+        if (rownames[i] %in% rowname_list) {
+          elements[[rownames[i]]] = row
         }
       }
-      rownames[i] <<- rowname
-      row = readBin(a,numeric(),size=4,n=col_number,endian="little")
-      if (is.integer(cols)) {
-        return(row[cols])
+      if (!is.null(rowname_regexp)) {
+        if (grepl(pattern = rowname_regexp, x = rownames[i])) {
+          elements[[rownames[i]]] = row
+        }
       }
-      return(row)
-    },as.array(rep(0,returned_columns)))
-  )
+    }
+    matrix = t(simplify2array(elements))
+    rownames = names(elements)
+
+  }
   close(pb)
   close(a)
   rownames(matrix) = rownames
