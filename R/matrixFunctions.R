@@ -358,7 +358,7 @@ magnitudes <- function(matrix) {
 #' @return An object of the same class as matrix
 #' @export
 normalize_lengths = function(matrix) {
-  t(t(matrix)/magnitudes(matrix))
+  val = matrix/magnitudes(matrix)
 }
 
 #' Reduce by rownames

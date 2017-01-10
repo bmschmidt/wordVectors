@@ -1,0 +1,146 @@
+---
+title: "In-workshop materials"
+output: html_document
+---
+
+
+## Introduction
+
+```{r}
+knitr::opts_chunk$set(eval=FALSE)
+```
+
+
+```{r}
+library(wordVectors)
+library(magrittr)
+
+news = read.vectors("~/word2vec_models/short_google_news.bin")
+
+
+knitr::opts_chunk$set(eval=FALSE)
+
+```
+
+Closeness
+
+```{r}
+
+news %>% nearest_to(news[["America"]],40)
+
+news %>% nearest_to(news[["Canada"]],40)
+
+europe_words = news %>% nearest_to(news[[c("France","Germany")]],100) %>% names
+
+just_europe = news[[europe_words ,average=FALSE]]
+```
+
+Plotting Europe words by their similarity.
+
+This takes some R code to do, but you can see how to change it.
+
+```{r}
+library(ggplot2)
+
+country_similarities = data.frame(
+  # Note if you change this line, you'll have to change *both* the variable and the filter name. 
+  # (i.e., 'france_similarity' and 'news[["France"]]')
+  france_similarity = just_europe %>% cosineSimilarity(news[["France"]]),
+  germany_similarity = just_europe %>% cosineSimilarity(news[["Germany"]]),
+  word = rownames(just_europe)
+) 
+
+ggplot(country_similarities) + geom_text(
+  aes(x=france_similarity,
+      y=germany_similarity,
+      label=word)
+)
+
+```
+
+Some analogies.
+
+```{r}
+
+install.packages("abind")
+library(abind)
+
+news %>% nearest_to(-{news[["woman"]] - news[["man"]]}, 50)
+
+news %>% nearest_to(news[["father"]]-news[["man"]] + news[["woman"]])
+
+news %>% nearest_to(news[["Berlin"]] + news[["Spain"]] - news[["Germany"]] )
+
+plot_words(c("father","mother","uncle","aunt","grandfather","grandmother","sister","brother","son","daughter"),news)
+```
+
+## Alignment
+
+Alignment of multiple models presents fascinating, if poorly understood, opportunities.
+
+```{r setup}
+library(shapes)
+library(wordVectors)
+library(magrittr)
+library(abind)
+
+source("http://benschmidt.org/word2vec_workshop/alignment.R")
+
+# If you downloaded these files, they're in a different folder.
+
+model_names = sort(list.files("~/word2vec_models/good_hansard/",full.names = T))
+models = read_group(model_names)
+
+
+models[[3]] %>% nearest_to(models[[3]][["america"]])
+
+```
+
+Align the models
+
+``` {r}
+
+aligned = align_models(models,shared_vocab_only = FALSE)
+
+stanford_plot(aligned, word = c("communism"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("democracy"), 10, transform_type = "mds") + theme_bw()
+
+stanford_plot(aligned, word = c("empire"), 15, transform_type = "pca") + theme_bw()
+
+stanford_plot(aligned, word = c("market"), 15, transform_type = "pca")
+
+
+```
+
+
+```{r}
+
+distance = function(mx,my) {sqrt(rowSums((mx - my)^2))}
+distmat = sapply(1:length(aligned),function(i) {
+  distance(aligned[[i]],aligned[[3]])
+})
+
+sort(-apply(distmat,1,mean))[1:100]
+
+stanford_plot(aligned,"liberty")
+
+stanford_plot(aligned, word = c("tyranny"), 15, transform_type = "mds")
+
+#Communism becomes taken *seriously*.
+stanford_plot(aligned, word = c("communism"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("english"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("empire"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("market"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("economy"), 15, transform_type = "pca")
+
+
+stanford_plot(aligned, word = c("empire"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("king","queen"), 15, transform_type = "pca")
+
+```

@@ -1,0 +1,112 @@
+---
+title: "Word2Vec Workshop"
+author: "Ben Schmidt"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Intro 
+
+This vignette links to some downloads for the Northeastern word2vec workshop, 2016-11-09. It assumes that you have the program RStudio installed on your computer and know how to paste code into the console area.
+If not, there are still some downloads you can do linked.
+
+# About this document
+
+This document is written in R Markdown, a format for sharing R documents. The areas in grey are parts you should paste into RStudio. You may get error messages! If so, try tracking down the problem; often, they will resolve by updating your version of R or installing new packages that are listed as missing.
+
+# Package installation
+
+If you have not installed this package, paste the below into R Studio. It will install the package 'devtools' and then the `wordVectors` package we're using in the workshop. 
+
+This will also install the 'tidyverse' package into your RStudio, which while not strictly required for `wordVectors`, bundles a lot of useful functions that I reserve the right to use in the code below.
+
+```{r}
+knitr::opts_chunk$set(eval=FALSE)
+
+if (!require(wordVectors)) {
+  if (!(require(devtools))) {
+    install.packages("devtools")
+  }
+  if (!(require(tidyverse))) {
+    install.packages("tidyverse")
+  }
+  devtools::install_github("bmschmidt/wordVectors")
+}
+```
+
+# Sample files
+
+Once you install the package, you should download a few demonstration vectors from the links below.
+
+1. Google News vectors. I've put up a curtailed version [here](http://benschmidt.org/word2vec_workshop/short_google_news.bin). If you'd rather, you can download the full (very large) model from [here](https://github.com/mmihaltz/word2vec-GoogleNews-vectors) if you have a computer with a lot of RAM.
+2. Some demonstration vectors I've trained from British parliamentary proceedings (ie, Hansard) at various different periods. Those are available for download from [here](http://benschmidt.org/word2vec_workshop/). Pick and choose the ones that you like based on the years.
+
+Place these downloads in the same folder as the rest of your documents.
+
+# Building your own data
+
+If you have some text that you're already interested in, you could build a model ahead of time.
+
+Should you? If you bring your own text collection to the workshop *without* trying to get the model running, you should be able to run the model in a few minutes if the corpus is relatively small (say, several dozen books--if it's fewer than 10 books, I wouldn't really recommend this method, but you can run it quite easily). 
+
+But if you have a lot of text, which is where word2vec really shines (say, more than a few hundred books worth) you may want to train ahead of time.
+
+If so, follow the instructions below.
+
+The following steps will show you how to do that on a corpus of 70 cookbooks.
+
+```{r}
+library(wordVectors)
+library(magrittr)
+```
+
+First we build up a test file to train on.
+As an example, we'll use a collection of cookbooks from Michigan State University.
+This has to download from the Internet if it doesn't already exist.
+
+
+```{r}
+if (!file.exists("cookbooks.zip")) {
+  download.file("http://archive.lib.msu.edu/dinfo/feedingamerica/cookbook_text.zip","cookbooks.zip")
+}
+unzip("cookbooks.zip",exdir="cookbooks")
+```
+
+
+Then we *prepare* a single file for word2vec to read in. This does a couple things:
+
+1. Creates a single text file with the contents of every file in the original document;
+2. Uses the `tokenizers` package to clean and lowercase the original text, 
+3. If `bundle_ngrams` is greater than 1, joins together common bigrams into a single word. For example, "olive oil" may be joined together into "olive_oil" wherever it occurs.
+
+You can also do this in another language: particularly for large files, that will be **much** faster. (For reference: in a console, `perl -ne 's/[^A-Za-z_0-9 \n]/ /g; print lc $_;' cookbooks/*.txt > cookbooks.txt` will do much the same thing on ASCII text in a couple seconds.) If you do this and want to bundle ngrams, you'll then need to call `word2phrase("cookbooks.txt","cookbook_bigrams.txt",...)` to build up the bigrams; call it twice if you want 3-grams, and so forth.
+
+If you want to train on your *own* files, you can either:
+
+1. Replace the word "cookbooks" in this document with the name of the folder where you keep your text files;
+2. Rename to the folder where you're storing your own texts as "cookbooks," and put it in your directory.
+
+```{r}
+prep_word2vec(origin="cookbooks",destination="cookbooks.txt",lowercase=T,bundle_ngrams=2)
+```
+
+To train a word2vec model, use the function `train_word2vec`. This actually builds up the model. It uses an on-disk file as an intermediary and then reads that file into memory. The settings below are arbitrary, but not bad for most modern laptops.
+
+```{r}
+model = train_word2vec("cookbooks.txt","cookbook_vectors.bin",vectors=200,threads=4,window=12,iter=5)
+```
+
+A few notes:
+
+1. The 'threads' parameter is the number of processors to use on your computer. On a modern laptop, up to 8 threads can be useful.
+2. `iter` is how many times to read through the corpus. With fewer than 100 books, it can greatly help to increase the number of passes.
+3. Training can take a while. On my laptop, it takes a few minutes to train these cookbooks; larger models (on tens of thousands of books) can take longer.
+4. One of the best things about the word2vec algorithm is that it *does* work on extremely large corpora in linear time.
+5. In RStudio I've noticed that this sometimes appears to hang after a while; the percentage bar stops updating. If you check system activity it actually is still running, and will complete.
+6. If at any point you want to *read in* a previously trained model, you can do so by typing `model =  read.vectors("cookbook_vectors.bin")`.
+
+

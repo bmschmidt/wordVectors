@@ -1,0 +1,135 @@
+---
+title: "Bigram models"
+author: "Ben Schmidt"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Building bigrams
+
+Bigrams are just about the same as unigrams.
+
+```{r}
+library(wordVectors)
+library(magrittr)
+
+if (!file.exists("cookbooks.zip")) {
+  download.file("http://archive.lib.msu.edu/dinfo/feedingamerica/cookbook_text.zip","cookbooks.zip")
+}
+
+unzip("cookbooks.zip",exdir="cookbooks",overwrite = F)
+```
+
+
+Then we *prepare* a single file for word2vec to read in. This does a couple things:
+
+1. Creates a single text file with the contents of every file in the original document;
+2. Uses the `tokenizers` package to clean and lowercase the original text, 
+
+You can also do this in another language: particularly for large files, that will be *much faster*. (For reference: in a console, perl -pe 's/[^A-Za-z_0-9 \n]/ /g;' cookbooks/*.txt > cookbooks.txt` will do much the same thing on ASCII text in a couple seconds.)
+
+```{r}
+prep_word2vec("cookbooks","cookbooks.txt",lowercase=T,bundle_ngrams = 2)
+```
+
+To train a word2vec model, we still use the function `train_word2vec`, directed at the trigrams file.
+
+```{r}
+model = train_word2vec("cookbooks.txt","cookbooks_trigrams.bin",vectors=100,threads=2,window=12,iter=5)
+```
+
+* NOTE: If at any point you want to *read in* a previously trained model, you can do so by typing `model =  read.vectors("cookbook_vectors.bin")`
+
+Now we have a model in memory, trained on about 10 million words from 77 cookbooks. What can it tell us about food?
+
+Well, you can run some basic operations to find the nearest elements:
+
+```{r}
+model %>% nearest_to(model[["fish"]])
+```
+
+With that list, you can expand out further to search for multiple words:
+
+```{r}
+model %>% 
+  nearest_to(model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],50)
+```
+
+Now we have a pretty expansive list of potential fish-related words from old cookbooks. This may be useful for something in real life.
+
+Or we can just arrange them somehow. If you have the tsne package installed, (type `install.packages("tsne")` to download it), you can plot these words in a reduced dimensional space. In this case, it doesn't look like much of anything.
+
+```{r}
+some_fish = nearest_to(model,model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],50)
+fishy = model[[names(some_fish),average=F]]
+plot(fishy)
+```
+
+Let's pick a few different *kinds* of words instead.
+
+```{r}
+ingredients = c("madeira","beef","saucepan","carrots")
+four_different_nearnesses = lapply(ingredients, 
+       function(ingredient) model %>% nearest_to(model[[ingredient]],20) %>%
+         names) %>% unlist %>% unique
+
+subset = model[[four_different_nearnesses,average=F]]
+
+subset %>%
+  cosineDist(subset) %>% 
+  as.dist %>%
+  hclust %>% 
+  plot()
+
+```
+
+```{r}
+set.seed(50)
+model[sample(1:1000,50),] %>% 
+  cosineDist(fishy) %>% 
+  as.dist %>%
+  hclust %>% 
+  as.dendrogram %>%
+  plot(horiz=T)
+
+```
+
+
+But this set actually gives a fairly nicely clustered set of results if you plot the top words in the whole thing.
+
+```{r}
+plot(model)
+```
+
+Let's say you want to do something a little more complicated, like look at food along a sweet-salty axis.
+We can use the "cosineSimilarity" function to situate each word by where it falls alone a sweet-salty axis.
+
+```{r}
+sweet_salty = model[[c("sugar","sweet")]] - model[[c("salty","salt")]]
+fresh = model[[c("fresh","picked","washed")]] - 
+model %>% nearest_to(fresh_processed)
+sweetness = model %>% cosineSimilarity(sweet_salty)
+freshness = model %>% cosineSimilarity(fresh)
+
+plot(sweetness,freshness,type='n')
+text(sweetness[1:1000,],freshness[1:1000,],label=rownames(everything)[1:1000])
+```
+
+
+```{r}
+
+cooking_method = model[[c("roasted","grilled","boiled","steamed","broiled","fried")]] - model[[c("meat","vegetables","carrots","potatoes","beef","apples","fruit","fish")]]
+
+
+model %>% nearest_to(model[["potatoes"]] - cooking_method)
+model %>% nearest_to(model[["beef"]] - cooking_method)
+model %>% nearest_to(model[["fish"]] - cooking_method)
+
+model %>% nearest_to(model[["carrots"]],30)
+
+
+```

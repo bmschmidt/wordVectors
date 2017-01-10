@@ -1,0 +1,92 @@
+---
+title: "In-workshop materials"
+output: html_document
+---
+
+
+## Introduction
+
+```{r}
+knitr::opts_chunk$set(eval=FALSE)
+```
+
+
+```{r}
+library(wordVectors)
+library(magrittr)
+```
+
+
+## Alignment
+
+Alignment of multiple models presents fascinating, if poorly understood, opportunities.
+
+```{r setup}
+library(shapes)
+library(wordVectors)
+library(magrittr)
+library(tidyverse)
+
+#library(abind)
+
+source("R/alignment.R")
+
+# If you downloaded these files, they're in a different folder.
+
+model_names = list.files("~/Dropbox/hathi_word2vec/",full.names = T) %>% Filter(function(x) {grepl("(E,F).*.bin",x)},.)
+models = read_group(model_names,nrow=50000)
+
+
+models[[4]] %>% nearest_to(models[[4]][["Dakota"]])
+
+```
+
+Align the models
+
+``` {r}
+
+aligned = align_models(models,shared_vocab_only = FALSE)
+
+stanford_plot(aligned, word = c("political"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("telephone"), 10, transform_type = "mds") + theme_bw()
+
+stanford_plot(aligned, word = c("secretary"), 15, transform_type = "pca") + theme_bw()
+
+stanford_plot(aligned, word = c("farm"), 10, transform_type = "pca")
+
+stanford_plot(aligned, word = c("love"), 10, transform_type = "pca")
+
+```
+
+
+```{r}
+
+distance = function(mx,my) {sqrt(rowSums((mx - my)^2))}
+distmat = sapply(1:length(aligned),function(i) {
+  distance(aligned[[i]],aligned[[3]])
+})
+
+sort(-apply(distmat,1,mean))[1:100]
+
+stanford_plot(aligned,"liberty")
+
+stanford_plot(aligned, word = c("tyranny"), 15, transform_type = "mds")
+
+#Communism becomes taken *seriously*.
+stanford_plot(aligned, word = c("communism"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("english"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("empire"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("market"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("economy"), 15, transform_type = "pca")
+
+
+stanford_plot(aligned, word = c("empire"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("king","queen"), 15, transform_type = "pca")
+
+```
