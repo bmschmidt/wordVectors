@@ -14,7 +14,7 @@ This package does three major things:
 
 ### Quick start
 
-For a step-by-step interactive demo that includes installation and training a model on 77 historical cookbooks from Michigan State University, [jump to the quick-start guide](#quick-start).
+For a step-by-step interactive demo that includes installation and training a model on 77 historical cookbooks from Michigan State University, [jump to the quick-start guide](#quick-start-1).
 
 ### Credit
 
