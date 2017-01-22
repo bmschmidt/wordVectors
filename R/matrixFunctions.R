@@ -1,3 +1,17 @@
+vector_evaluation_environment = new.env()
+
+for (function_name in c("+","-","^","/","*")) {
+  assign(
+    function_name,
+    function(e1,e2) {
+      if (is.character(e1)) e1 <- vector_evaluation_environment$matrix_context[[e1]]
+      if (is.character(e2)) e2 <- vector_evaluation_environment$matrix_context[[e2]]
+      .Primitive(function_name)(e1,e2)
+    },
+    envir = vector_evaluation_environment
+  )
+}
+
 #' Vector Space Model class
 #'
 #' @description A class for describing and accessing Vector Space Models like Word2Vec.
@@ -431,10 +445,21 @@ filter_to_rownames <- function(matrix,words) {
 #' plot(hclust(as.dist(cosineDist(new_subjects,new_subjects))))
 #'
 #' @export
+
 cosineSimilarity <- function(x,y){
   # The most straightforward definition would be just:
   #  x %*% t(y)      /     (sqrt(rowSums(x^2) %*% t(rowSums(y^2))))
-  # However, we have to do a little type-checking and a few speedups.
+  # However, we do a little type-checking and a few speedups.
+
+  # Allow non-referenced characters to refer to the original matrix.
+  if (class(x)=="VectorSpaceModel") {
+    assign("matrix_context",x,envir=vector_evaluation_environment)
+    parent.env(vector_evaluation_environment) = parent.frame()
+    y = eval(substitute(y),envir = vector_evaluation_environment)
+    if (is.character(y)) {
+      y = x[[y]]
+    }
+  }
 
   if (!(is.matrix(x) || is.matrix(y))) {
     if (length(x)==length(y)) {
@@ -458,7 +483,6 @@ cosineSimilarity <- function(x,y){
   # triangles of a symmetrical matrix, I think.
   tcrossprod(x,y)/
     (sqrt(tcrossprod(square_magnitudes(x),square_magnitudes(y))))
-
   #
 }
 
@@ -496,6 +520,7 @@ cosineDist <- function(x,y) {
 project = function(matrix,vector) {
   # The matrix is a matrix:
   # b is a vector to reproject the matrix to be orthogonal to.
+  vector = eval_with_named_matrix(substitute(vector),matrix)
   b = as.vector(vector)
   if (length(b)!=ncol(matrix)) {
     stop("The vector must be the same length as the matrix it is being compared to")
@@ -520,6 +545,7 @@ project = function(matrix,vector) {
 #'
 #' @examples
 #' nearest_to(demo_vectors,demo_vectors[["man"]])
+#'
 #' genderless = reject(demo_vectors,demo_vectors[["he"]] - demo_vectors[["she"]])
 #' nearest_to(genderless,genderless[["man"]])
 #'
@@ -530,11 +556,34 @@ reject = function(matrix,vector) {
   return(val)
 }
 
+
+nothing_to_see_here = function() {
+  # A special wrapper around eval to allow strings to refer to the context
+  if (mode(expr)=="character") return(context[[eval(expr)]])
+  tryCatch(
+    eval(expr),
+    error = function(e) {
+      if (e[[1]]=="non-numeric argument to binary operator") {
+        parts = as.list(expr)
+        fixed = lapply(parts,function(part) {
+          if (is.character(part)) part = context[[part]]
+          eval_with_named_matrix(part, context)
+        })
+        call = as.call(fixed)
+        eval(call)
+      } else {e}
+    }
+  )
+}
+
+
+
 #' Return the n closest words in a VectorSpaceModel to a given vector.
 #'
 #' @param matrix A matrix or VectorSpaceModel
-#' @param vector  Avector (or an object coercable to a vector, see project)
-#' of the same length as the VectorSpaceModel.
+#' @param vector  A vector (or an object coercable to a vector, see project)
+#' of the same length as the VectorSpaceModel. Or, for convenience a string
+#' representing a word in the passed matrix. See examples.
 #' @param n The number of closest words to include.
 #'
 #' @return A vector of distances, with names corresponding to the words
@@ -542,21 +591,37 @@ reject = function(matrix,vector) {
 #'
 #' @examples
 #'
-#' #Synonyms and similar words
+#' # Synonyms and similar words
 #' nearest_to(demo_vectors,demo_vectors[["good"]])
+#'
+#' If 'matrix' is a VectorSpaceModel object,
+#' you can also just enter a string directly, and
+#' So the results below hold.
+#'
+#' nearest_to(demo_vectors,"good")
 #'
 #' # Something close to the classic king:man::queen:woman;
 #' # What's the equivalent word for a female teacher that "guy" is for
 #' # a male one?
-#' nearest_to(demo_vectors,demo_vectors[["guy"]] - demo_vectors[["man"]] + demo_vectors[["woman"]])
+#'
+#' nearest_to(demo_vectors,"guy" - "man" + "woman")
 #'
 #' @export
-
 nearest_to = function(matrix,vector,n=10) {
-  sims = cosineSimilarity(matrix,matrix(as.vector(vector),ncol=ncol(matrix)))
+  #message(vector)
+  if (class(matrix)=="VectorSpaceModel") {
+    vector_evaluation_environment$matrix_context = matrix
+    vector = eval(substitute(vector),env = vector_evaluation_environment)
+    if (is.character(vector)) {
+      vector = matrix[[vector]]
+    }
+  }
+
+  sims = cosineSimilarity(matrix,vector)
   ords = order(-sims[,1])
   structure(
     1-sims[ords[1:n]], # Convert from similarity to distance.
     names=rownames(sims)[ords[1:n]])
 }
+
 

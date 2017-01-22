@@ -15,7 +15,7 @@ demo_vectors
 A sample VectorSpaceModel object trained on about 15 million
 teaching evaluations, limited to the 999 most common words.
 Included for demonstration purposes only: there's only so much you can
-do with a 999 dimension vocabulary.
+do with a 999 length vocabulary.
 }
 \details{
 You're best off downloading a real model to work with,
