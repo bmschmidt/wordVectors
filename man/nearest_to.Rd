@@ -9,8 +9,9 @@ nearest_to(matrix, vector, n = 10)
 \arguments{
 \item{matrix}{A matrix or VectorSpaceModel}
 
-\item{vector}{Avector (or an object coercable to a vector, see project)
-of the same length as the VectorSpaceModel.}
+\item{vector}{A vector (or an object coercable to a vector, see project)
+of the same length as the VectorSpaceModel. Or, for convenience a string
+representing a word in the passed matrix. See examples.}
 
 \item{n}{The number of closest words to include.}
 }
@@ -23,13 +24,20 @@ Return the n closest words in a VectorSpaceModel to a given vector.
 }
 \examples{
 
-#Synonyms and similar words
+# Synonyms and similar words
 nearest_to(demo_vectors,demo_vectors[["good"]])
+
+If 'matrix' is a VectorSpaceModel object,
+you can also just enter a string directly, and
+So the results below hold.
+
+nearest_to(demo_vectors,"good")
 
 # Something close to the classic king:man::queen:woman;
 # What's the equivalent word for a female teacher that "guy" is for
 # a male one?
-nearest_to(demo_vectors,demo_vectors[["guy"]] - demo_vectors[["man"]] + demo_vectors[["woman"]])
+
+nearest_to(demo_vectors,"guy" - "man" + "woman")
 
 }
 
