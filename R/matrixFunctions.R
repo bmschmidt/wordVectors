@@ -1,16 +1,26 @@
-vector_evaluation_environment = new.env()
 
-for (function_name in c("+","-","^","/","*")) {
-  assign(
-    function_name,
-    function(e1,e2) {
-      if (is.character(e1)) e1 <- vector_evaluation_environment$matrix_context[[e1]]
-      if (is.character(e2)) e2 <- vector_evaluation_environment$matrix_context[[e2]]
-      .Primitive(function_name)(e1,e2)
-    },
-    envir = vector_evaluation_environment
-  )
-}
+# This package uses a custom environment to evaluate
+# arithmetic on vectorSpaceModels.
+
+
+vector_evaluation_environment = new.env()
+with( # 'with' so that the matrix_context assignment below works.
+  vector_evaluation_environment,
+     lapply(c("+","-","^","/","*"), function(function_name) {
+       assign(
+        function_name,
+        function(e1,e2=NULL) {
+          if (is.character(e1)) e1 <- matrix_context[[e1]]
+          if (is.character(e2)) e2 <- matrix_context[[e2]]
+          # I think this is only relevant for addition and subtraction
+          if (is.null(e2)) {return(.Primitive(function_name)(e1))}
+          .Primitive(function_name)(e1,e2)
+        },
+        envir = vector_evaluation_environment
+      )
+    })
+)
+
 
 #' Vector Space Model class
 #'
@@ -161,26 +171,37 @@ setMethod("show","VectorSpaceModel",function(object) {
 #' sanest thing to do is reduce the full model down to two dimensions
 #' using T-SNE, which preserves some of the local clusters.
 #'
+#' For individual subsections, it can make sense to do a principal components
+#' plot of the space of just those letters. This is what happens if method
+#' is pca. On the full vocab, it's kind of a mess.
+#'
 #' This plots only the first 300 words in the model.
 #'
 #' @param x The model to plot
 #' @param y (ignored)
+#' @param method
 #' @param ... Further arguments passed to tsne::tsne.
 #' (Note: not to plot.)
 #'
 #' @return The TSNE model (silently.)
 #' @export
-setMethod("plot","VectorSpaceModel",function(x,y,...) {
-  message("Attempting to use T-SNE to plot the vector representation")
-  message("Cancel if this is taking too long")
-  message("Or run 'install.packages' tsne if you don't have it.")
-  x = as.matrix(x)
-  short = x[1:min(300,nrow(x)),]
-  m = tsne::tsne(short,...)
-  plot(m,type='n',main="A two dimensional reduction of the vector space model using t-SNE")
-  graphics::text(m,rownames(short),cex = ((400:1)/200)^(1/3))
-  rownames(m)=rownames(short)
-  silent = m
+setMethod("plot","VectorSpaceModel",function(x,method="tsne",...) {
+  if (method=="tsne") {
+    message("Attempting to use T-SNE to plot the vector representation")
+    message("Cancel if this is taking too long")
+    message("Or run 'install.packages' tsne if you don't have it.")
+    x = as.matrix(x)
+    short = x[1:min(300,nrow(x)),]
+    m = tsne::tsne(short,...)
+    plot(m,type='n',main="A two dimensional reduction of the vector space model using t-SNE")
+    graphics::text(m,rownames(short),cex = ((400:1)/200)^(1/3))
+    rownames(m)=rownames(short)
+    silent = m
+  } else if (method=="pca") {
+    vectors = predict(prcomp(x))[,1:2]
+    plot(vectors,type='n')
+    text(vectors,labels=rownames(vectors))
+  }
 })
 
 #' Convert to a Vector Space Model
@@ -199,18 +220,18 @@ as.VectorSpaceModel = function(matrix) {
 #'
 #' @param filename The file to read in.
 #' @param vectors The number of dimensions word2vec calculated. Imputed automatically if not specified.
-#' @param binary Read in the binary word2vec form. (Wraps `read.binary.vectors`)
+#' @param binary Read in the binary word2vec form. (Wraps `read.binary.vectors`) By default, function
+#' guesses based on file suffix.
 #' @param ... Further arguments passed to read.table or read.binary.vectors.
-#' Note that both accept 'nrow' as an argument. Word2vec produces
-#' by default frequency sorted output. Therefore 'read.vectors(...,nrows=500)', for example,
+#' Note that both accept 'nrows' as an argument. Word2vec produces
+#' by default frequency sorted output. Therefore 'read.vectors("file.bin", nrows=500)', for example,
 #' will return the vectors for the top 500 words. This can be useful on machines with limited
 #' memory.
 #' @export
 #' @return An matrixlike object of class `VectorSpaceModel`
 #'
-read.vectors <- function(filename,vectors=guess_n_cols(),binary=FALSE,...) {
-
-  if(rev(strsplit(filename,"\\.")[[1]])[1] =="bin") {
+read.vectors <- function(filename,vectors=guess_n_cols(),binary=NULL,...) {
+  if(rev(strsplit(filename,"\\.")[[1]])[1] =="bin" && is.null(binary)) {
     message("Filename ends with .bin, so reading in binary format")
     binary=TRUE
   }
@@ -248,9 +269,9 @@ read.vectors <- function(filename,vectors=guess_n_cols(),binary=FALSE,...) {
 #' @param cols The column numbers to read. Default is "All";
 #' if you are in a memory-limited environment,
 #' you can limit the number of columns you read in by giving a vector of column integers
-#' @param name_list A whitelist of words. If you wish to read in only a few dozen words,
+#' @param rowname_list A whitelist of words. If you wish to read in only a few dozen words,
 #' all other rows will be skipped and only these read in.
-#' @param name_regexp A regular expression specifying a pattern for rows to read in. Row
+#' @param rowname_regexp A regular expression specifying a pattern for rows to read in. Row
 #' names matching that pattern will be included in the read; all others will be skipped.
 #' @return A VectorSpaceModel object
 #' @export
@@ -446,19 +467,28 @@ filter_to_rownames <- function(matrix,words) {
 #'
 #' @export
 
-cosineSimilarity <- function(x,y){
+cosineSimilarity <- function(x,y) {
   # The most straightforward definition would be just:
   #  x %*% t(y)      /     (sqrt(rowSums(x^2) %*% t(rowSums(y^2))))
   # However, we do a little type-checking and a few speedups.
 
   # Allow non-referenced characters to refer to the original matrix.
   if (class(x)=="VectorSpaceModel") {
-    assign("matrix_context",x,envir=vector_evaluation_environment)
-    parent.env(vector_evaluation_environment) = parent.frame()
-    y = eval(substitute(y),envir = vector_evaluation_environment)
-    if (is.character(y)) {
-      y = x[[y]]
-    }
+    y = tryCatch(
+      force(y),
+      error = function(e) {
+        if (e[[1]]=="non-numeric argument to binary operator" ||
+            e[[1]]=="invalid argument to unary operator"
+            ){
+          assign("matrix_context",x,envir=vector_evaluation_environment)
+          parent.env(vector_evaluation_environment) = parent.frame()
+          y = eval(substitute(y),envir = vector_evaluation_environment)
+        } else {e}
+      })
+  }
+  # It's also cool to just pass a character.
+  if (is.character(y)) {
+    y = x[[y]]
   }
 
   if (!(is.matrix(x) || is.matrix(y))) {
@@ -485,6 +515,7 @@ cosineSimilarity <- function(x,y){
     (sqrt(tcrossprod(square_magnitudes(x),square_magnitudes(y))))
   #
 }
+
 
 #' Cosine Distance
 #' @description Calculate the cosine distance between two vectors.
@@ -556,28 +587,6 @@ reject = function(matrix,vector) {
   return(val)
 }
 
-
-nothing_to_see_here = function() {
-  # A special wrapper around eval to allow strings to refer to the context
-  if (mode(expr)=="character") return(context[[eval(expr)]])
-  tryCatch(
-    eval(expr),
-    error = function(e) {
-      if (e[[1]]=="non-numeric argument to binary operator") {
-        parts = as.list(expr)
-        fixed = lapply(parts,function(part) {
-          if (is.character(part)) part = context[[part]]
-          eval_with_named_matrix(part, context)
-        })
-        call = as.call(fixed)
-        eval(call)
-      } else {e}
-    }
-  )
-}
-
-
-
 #' Return the n closest words in a VectorSpaceModel to a given vector.
 #'
 #' @param matrix A matrix or VectorSpaceModel
@@ -585,9 +594,20 @@ nothing_to_see_here = function() {
 #' of the same length as the VectorSpaceModel. Or, for convenience a string
 #' representing a word in the passed matrix. See examples.
 #' @param n The number of closest words to include.
+#' @param as_df Return as a data.frame? If false, returns a named vector, for back-compatibility.
+#' @param fancy_names If true (the default) the data frame will have descriptive names like
+#' 'similarity to "king+queen-man"'; otherwise, just 'similarity.'
 #'
-#' @return A vector of distances, with names corresponding to the words
-#' in the parent VectorSpaceModel, of length n.
+#' @return A sorted data.frame with columns for the words and their similarity
+#' to the target vector. (Or, if fancy_names==FALSE, a named vector of similarities.)
+#'
+#' @description This is a convenience wrapper around the most common use of
+#' 'cosineSimilarity'; the listing of several words similar to a given vector.
+#' cosineSimilarity.
+#' This returns a data.frame suitable for plotting, etc,
+#' cosineSimilarity is more powerful--you can, for instance, explore the matrix
+#' of relations between several words. But with n=Inf, nearest_to is often better for
+#' plugging directly into a plot.
 #'
 #' @examples
 #'
@@ -596,7 +616,8 @@ nothing_to_see_here = function() {
 #'
 #' If 'matrix' is a VectorSpaceModel object,
 #' you can also just enter a string directly, and
-#' So the results below hold.
+#' it will be evaluated in the context of the passed matrix.
+#'
 #'
 #' nearest_to(demo_vectors,"good")
 #'
@@ -607,21 +628,49 @@ nothing_to_see_here = function() {
 #' nearest_to(demo_vectors,"guy" - "man" + "woman")
 #'
 #' @export
-nearest_to = function(matrix,vector,n=10) {
-  #message(vector)
+nearest_to = function(matrix, vector, n=10, as_df = TRUE, fancy_names = TRUE) {
+  label = deparse(substitute(vector),width.cutoff=500)
   if (class(matrix)=="VectorSpaceModel") {
-    vector_evaluation_environment$matrix_context = matrix
-    vector = eval(substitute(vector),env = vector_evaluation_environment)
-    if (is.character(vector)) {
-      vector = matrix[[vector]]
-    }
+    message(vector)
+    vector = tryCatch(
+      force(vector),
+      error = function(e) {
+        if (e[[1]]=="non-numeric argument to binary operator" ||
+            e[[1]]=="invalid argument to unary operator"
+        ){
+          assign("matrix_context",matrix,envir=vector_evaluation_environment)
+          parent.env(vector_evaluation_environment) = parent.frame()
+          vector = eval(substitute(vector),envir = vector_evaluation_environment)
+        } else {e}
+      })
   }
-
+  # It's also cool to just pass a character.
+  if (is.character(vector)) {
+    vector = matrix[[vector]]
+  }
+  # The actually wrapping.
   sims = cosineSimilarity(matrix,vector)
+
+  # Top n shouldn't be greater than the vocab length.
+  n = min(n,length(sims))
+
+  # For sorting.
   ords = order(-sims[,1])
-  structure(
-    1-sims[ords[1:n]], # Convert from similarity to distance.
-    names=rownames(sims)[ords[1:n]])
+
+  if (!as_df) {
+    structure(
+      1-sims[ords[1:n]], # Convert from similarity to distance.
+      names=rownames(sims)[ords[1:n]])
+  } else {
+    return_val = data.frame(rownames(sims)[ords[1:n]], sims[ords[1:n]],stringsAsFactors=FALSE)
+    if (fancy_names) {
+      names(return_val) = c("word", paste("similarity to", label))
+    } else {
+      names(return_val) = c("word","similarity")
+    }
+    rownames(return_val) = NULL
+    return_val
+  }
 }
 
 

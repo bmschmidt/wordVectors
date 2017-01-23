@@ -4,7 +4,7 @@
 \alias{nearest_to}
 \title{Return the n closest words in a VectorSpaceModel to a given vector.}
 \usage{
-nearest_to(matrix, vector, n = 10)
+nearest_to(matrix, vector, n = 10, as_df = TRUE, fancy_names = TRUE)
 }
 \arguments{
 \item{matrix}{A matrix or VectorSpaceModel}
@@ -14,13 +14,24 @@ of the same length as the VectorSpaceModel. Or, for convenience a string
 representing a word in the passed matrix. See examples.}
 
 \item{n}{The number of closest words to include.}
+
+\item{as_df}{Return as a data.frame? If false, returns a named vector, for back-compatibility.}
+
+\item{fancy_names}{If true (the default) the data frame will have descriptive names like
+'similarity to "king+queen-man"'; otherwise, just 'similarity.'}
 }
 \value{
-A vector of distances, with names corresponding to the words
-in the parent VectorSpaceModel, of length n.
+A sorted data.frame with columns for the words and their similarity
+to the target vector. (Or, if fancy_names==FALSE, a named vector of similarities.)
 }
 \description{
-Return the n closest words in a VectorSpaceModel to a given vector.
+This is a convenience wrapper around the most common use of
+'cosineSimilarity'; the listing of several words similar to a given vector.
+cosineSimilarity.
+This returns a data.frame suitable for plotting, etc,
+cosineSimilarity is more powerful--you can, for instance, explore the matrix
+of relations between several words. But with n=Inf, nearest_to is often better for
+plugging directly into a plot.
 }
 \examples{
 
@@ -29,7 +40,8 @@ nearest_to(demo_vectors,demo_vectors[["good"]])
 
 If 'matrix' is a VectorSpaceModel object,
 you can also just enter a string directly, and
-So the results below hold.
+it will be evaluated in the context of the passed matrix.
+
 
 nearest_to(demo_vectors,"good")
 

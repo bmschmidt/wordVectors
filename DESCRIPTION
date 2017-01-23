@@ -1,14 +1,17 @@
 Package: wordVectors
 Type: Package
 Title: Tools for creating and analyzing vector-space models of texts
-Version: 1.3
-Date: 2015-09-10
+Version: 1.4
+Date: 2016-01-23
 Author: Ben Schmidt, Jian Li
 Maintainer: Ben Schmidt <bmschmidt@gmail.com>
-Description: wordVectors wraps Google's word2vec code for creating vector-space
-    models of texts, and defines a new class "VectorSpaceModel" (extending the native matrix class)
-    with a number of functions that make it easier to perform useful operations in a
-    word-vector space.
+Description:
+	wordVectors wraps Google's implementation in C for training word2vec models,
+	and provides several R functions for exploratory data analysis of word2vec
+	and other related models. These include import-export from the binary format,
+	some useful linear algebra operations missing from R, and a streamlined
+	syntax for working with models and performing vector arithmetic that make it
+	easier to perform useful operations in a word-vector space.
 License: Apache License (== 2.0)
 Depends:
     R (>= 2.14.0)
@@ -19,5 +22,6 @@ Imports:
     utils
 Suggests:
     stringi,
-    tsne
+    tsne,
+    maggritr
 RoxygenNote: 5.0.1

@@ -11,29 +11,29 @@ vignette: >
 
 # Intro 
 
-This vignette walks you through training a word2vec model, and using that model to search for similarities, to build clusters, and to visualize vocabulary relationships of that model in two dimensions.
+This vignette walks you through training a word2vec model, and using that model to search for similarities, to build clusters, and to visualize vocabulary relationships of that model in two dimensions. If you are working with pre-trained vectors, you might want to jump straight to the "exploration" vignette; it is a little slower-paced, but doesn't show off quite so many features of the package.
 
 # Package installation
 
 If you have not installed this package, paste the below.
 
 ```{r}
-if (!require(wordVectors) {
+if (!require(wordVectors)) {
   if (!(require(devtools))) {
     install.packages("devtools")
   }
   devtools::install_github("bmschmidt/wordVectors")
-})
+}
 
 
 ```
 
 # Building test data
 
-We begin by importing the word2vec library and the `maggritr` package, because its pipe operator makes things much clearer.
+We begin by importing the `wordVectors` package and the `maggritr` package, because its pipe operator makes things much clearer.
 
 ```{r}
-library(word2vec)
+library(wordVectors)
 library(magrittr)
 ```
 
@@ -70,12 +70,13 @@ model = train_word2vec("cookbooks.txt","cookbook_vectors.bin",vectors=200,thread
 
 A few notes:
 
-1. The 'threads' parameter is the number of processors to use on your computer. On a modern laptop, up to 8 threads can be useful.
-2. `iter` is how many times to read through the corpus. With fewer than 100 books, it can greatly help to increase the number of passes.
-3. Training can take a while. On my laptop, it takes a few minutes to train these cookbooks; larger models (on tens of thousands of books) can take longer.
-4. One of the best things about the word2vec algorithm is that it *does* work on extremely large corpora in linear time.
-5. In RStudio I've noticed that this sometimes appears to hang after a while; the percentage bar stops updating. If you check system activity it actually is still running, and will complete.
-6. If at any point you want to *read in* a previously trained model, you can do so by typing `model =  read.vectors("cookbook_vectors.bin")`.
+1. The `vectors` parameter is the dimensionality of the representation. More vectors usually means more precision, but also more random error and slower operations. Likely choices are probably in the range 100-500.
+2. The `threads` parameter is the number of processors to use on your computer. On a modern laptop, the fastest results will probably be between 2 and 8 threads, depending on the number of cores.
+3. `iter` is how many times to read through the corpus. With fewer than 100 books, it can greatly help to increase the number of passes; if you're working with billions of words, it probably matters less.
+4. Training can take a while. On my laptop, it takes a few minutes to train these cookbooks; larger models take proportionally more time.
+5. One of the best things about the word2vec algorithm is that it *does* work on extremely large corpora in linear time.
+6. In RStudio I've noticed that this sometimes appears to hang after a while; the percentage bar stops updating. If you check system activity it actually is still running, and will complete.
+7. If at any point you want to *read in* a previously trained model, you can do so by typing `model =  read.vectors("cookbook_vectors.bin")`.
 
 Now we have a model in memory, trained on about 10 million words from 77 cookbooks. What can it tell us about food?
 
@@ -104,13 +105,13 @@ Or we can just arrange them somehow. If you have the tsne package installed, (ty
 
 ```{r}
 some_fish = nearest_to(model,model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],150)
-fishy = model[[names(some_fish),average=F]]
+fishy = model[[some_fish$word,average=F]]
 plot(fishy,perplexity=15)
 ```
 
 ## Clustering
 
-We can use standard clustering algorithms, like kmeans, to find groups of terms that fit together. You can think of this as a sort of topic model, although unlike more sophisticated topic modeling algorithms like Latent Direchlet Allocation, each word must be tied to a particular topic.
+We can use standard clustering algorithms, like kmeans, to find groups of terms that fit together. You can think of this as a sort of topic model, although unlike more sophisticated topic modeling algorithms like Latent Direchlet Allocation, each word must be tied to single particular topic.
 
 ```{r}
 set.seed(10)
@@ -118,7 +119,7 @@ centers = 150
 clustering = kmeans(model,centers=centers,iter.max = 40)
 ```
 
-Here are a ten random topics produced through this method. Each of the columns are the ten most frequent words in one random cluster.
+Here are a ten random "topics" produced through this method. Each of the columns are the ten most frequent words in one random cluster.
 
 ```{r}
 sapply(sample(1:centers,10),function(n) {
@@ -135,7 +136,8 @@ the 20 words closest to each of four different kinds of words.
 ingredients = c("madeira","beef","saucepan","carrots")
 term_set = lapply(ingredients, 
        function(ingredient) {
-        nearest_words = model %>% nearest_to(model[[ingredient]],20) %>% names
+          nearest_words = model %>% nearest_to(model[[ingredient]],20)
+          nearest_words$word
         }) %>% unlist
 
 subset = model[[term_set,average=F]]
