@@ -27,6 +27,8 @@ It's not extremely fast, but once the data is loaded in most operations happen i
 
 For high-performance analysis of models, C or python's numpy/gensim will likely be better than this package, in part because R doesn't have support for single-precision floats. The goal of this package is to facilitate clear code and exploratory data analysis of models.
 
+Please note that this project is released with a [Contributor Code of Conduct](CONDUCT.md). By participating in this project you agree to abide by its terms.
+
 ## Creating text vectors.
 
 One portion of this is an expanded version of the code from Jian Li's `word2vec` package with a few additional parameters enabled as the function `train_word2vec`.
