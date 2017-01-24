@@ -15,7 +15,7 @@ This package does three major things to make it easier to work with word2vec and
 
 ### Quick start
 
-For a step-by-step interactive demo that includes installation and training a model on 77 historical cookbooks from Michigan State University, [see the introductory vignette.](#quick-start).
+For a step-by-step interactive demo that includes installation and training a model on 77 historical cookbooks from Michigan State University, [see the introductory vignette.](https://github.com/bmschmidt/wordVectors/blob/master/vignettes/introduction.Rmd).
 
 ### Credit
 
