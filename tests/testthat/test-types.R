@@ -1,6 +1,5 @@
 #source("sample-data.r")
 context("VectorSpaceModel Class Works")
-library(dplyr)
 
 test_that("Class Exists",
           expect_s4_class(

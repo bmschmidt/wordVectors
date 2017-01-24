@@ -1,5 +1,4 @@
 context("Name collapsing")
-library(dplyr)
 
 test_that("name substitution works",
   expect_equivalent(
@@ -47,11 +46,10 @@ test_that("nearest_to can wrap in function",
 )
 
 test_that("Name substitution is occurring",
-  expect_true(
-    all_equal(
+  expect_equivalent(
       cosineSimilarity(demo_vectors,"good"),
       cosineSimilarity(demo_vectors,demo_vectors[["good"]])
-    )))
+    ))
 
 test_that("reference in functional scope is passed along",
           expect_equivalent(

@@ -1,5 +1,4 @@
 context("VectorSpaceModel Linear Algebra is sensible")
-library(dplyr)
 
 test_that("Vectors are near to themselves",
           expect_lt(
