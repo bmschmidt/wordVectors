@@ -30,7 +30,7 @@ if (!require(wordVectors)) {
 
 # Building test data
 
-We begin by importing the `wordVectors` package and the `maggritr` package, because its pipe operator makes it easier to work with data.
+We begin by importing the `wordVectors` package and the `magrittr` package, because its pipe operator makes it easier to work with data.
 
 ```{r}
 library(wordVectors)

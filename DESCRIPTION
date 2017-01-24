@@ -23,7 +23,7 @@ Imports:
 Suggests:
     stringi,
     tsne,
-    maggritr,
+    magrittr,
     testthat,
     ggplot2
 RoxygenNote: 5.0.1
