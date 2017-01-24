@@ -1,8 +1,7 @@
 context("Training Functions Work")
 
-source_dir = paste0(utils::getSrcDirectory(train_word2vec))
-
-file.remove("/tmp/tmp.txt")
+source_dir = paste0(utils::getSrcDirectory(wordVectors::train_word2vec))
+file.remove("/tmp/tmp.txt", showWarnings=FALSE)
 
 test_that("Preparation produces file",
           expect_equal(
