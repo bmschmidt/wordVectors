@@ -11,7 +11,7 @@ test_that("Preparation produces file",
           )
 )
 
-test_that("Bundling works",
+test_that("Bundling works on multiple levels",
           expect_equal(
             prep_word2vec(source_dir,"/tmp/tmp.txt",bundle_ngrams = 3),
             "/tmp/tmp.txt"
@@ -24,3 +24,4 @@ test_that("Training Works",
             "VectorSpaceModel"
           )
 )
+

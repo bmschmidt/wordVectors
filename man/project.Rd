@@ -9,7 +9,7 @@ project(matrix, vector)
 \arguments{
 \item{matrix}{A matrix or VectorSpaceModel}
 
-\item{vector}{A vector (or an object coercable to a vector, see project)
+\item{vector}{A vector (or object coercable to a vector)
 of the same length as the VectorSpaceModel.}
 }
 \value{
@@ -20,6 +20,6 @@ If the input is a matrix, the output will be a matrix: if a VectorSpaceModel,
 it will be a VectorSpaceModel.
 }
 \description{
-Project each row of an input matrix along a vector.
+As with 'cosineSimilarity
 }
 

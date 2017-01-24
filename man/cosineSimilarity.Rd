@@ -21,12 +21,17 @@ A matrix. Rows correspond to entries in x; columns to entries in y.
 Calculate the cosine similarity of two matrices or a matrix and a vector.
 }
 \examples{
+
+# Inspect the similarity of several academic disciplines by hand.
 subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=FALSE]]
 similarities = cosineSimilarity(subjects,subjects)
 
+# Use 'nearest_to' to build up a large list of similar words to a seed set.
 subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=TRUE]]
 new_subject_list = nearest_to(demo_vectors,subjects,20)
-new_subjects = demo_vectors[[names(new_subject_list),average=FALSE]]
+new_subjects = demo_vectors[[new_subject_list$word,average=FALSE]]
+
+# Plot the cosineDistance of these as a dendrogram.
 plot(hclust(as.dist(cosineDist(new_subjects,new_subjects))))
 
 }

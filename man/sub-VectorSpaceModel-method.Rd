@@ -14,9 +14,9 @@
 
 \item{j}{The column numbers to extract}
 
-\item{drop}{Whether to drop columns. This parameter is ignored.}
+\item{...}{Other arguments passed to extract (unlikely to be useful).}
 
-\item{j}{Other arguments to extract (unlikely to be useful).}
+\item{drop}{Whether to drop columns. This parameter is ignored.}
 }
 \value{
 A VectorSpaceModel

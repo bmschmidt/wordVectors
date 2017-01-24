@@ -9,39 +9,48 @@ nearest_to(matrix, vector, n = 10, as_df = TRUE, fancy_names = TRUE)
 \arguments{
 \item{matrix}{A matrix or VectorSpaceModel}
 
-\item{vector}{A vector (or an object coercable to a vector, see project)
-of the same length as the VectorSpaceModel. Or, for convenience a string
-representing a word in the passed matrix. See examples.}
+\item{vector}{A vector (or a string or a formula coercable to a vector)
+of the same length as the VectorSpaceModel. See below.}
 
 \item{n}{The number of closest words to include.}
 
 \item{as_df}{Return as a data.frame? If false, returns a named vector, for back-compatibility.}
 
 \item{fancy_names}{If true (the default) the data frame will have descriptive names like
-'similarity to "king+queen-man"'; otherwise, just 'similarity.'}
+'similarity to "king+queen-man"'; otherwise, just 'similarity.' The default can speed up
+ interactive exploration.}
 }
 \value{
 A sorted data.frame with columns for the words and their similarity
-to the target vector. (Or, if fancy_names==FALSE, a named vector of similarities.)
+to the target vector. (Or, if as_df==FALSE, a named vector of similarities.)
 }
 \description{
 This is a convenience wrapper around the most common use of
 'cosineSimilarity'; the listing of several words similar to a given vector.
-cosineSimilarity.
-This returns a data.frame suitable for plotting, etc,
-cosineSimilarity is more powerful--you can, for instance, explore the matrix
-of relations between several words. But with n=Inf, nearest_to is often better for
+Unlike cosineSimilarity, it returns a data.frame object instead of a matrix.
+cosineSimilarity is more powerful, because it can compare two matrices to
+each other; nearest_to can only take a vector or vectorlike object as its second argument.
+But with (or without) the argument n=Inf, nearest_to is often better for
 plugging directly into a plot.
+
+As with cosineSimilarity, the second argument can take several forms. If it's a vector or
+matrix slice, it will be taken literally. If it's a character string, it will
+be interepreted as a word and the associated vector from `matrix` will be used. If
+a formula, any strings in the formula will be converted to rows in the associated `matrix`
+before any math happens.
 }
 \examples{
 
 # Synonyms and similar words
 nearest_to(demo_vectors,demo_vectors[["good"]])
 
-If 'matrix' is a VectorSpaceModel object,
-you can also just enter a string directly, and
-it will be evaluated in the context of the passed matrix.
+# If 'matrix' is a VectorSpaceModel object,
+# you can also just enter a string directly, and
+# it will be evaluated in the context of the passed matrix.
 
+nearest_to(demo_vectors,"good")
+
+# You can also express more complicated formulas.
 
 nearest_to(demo_vectors,"good")
 
@@ -49,7 +58,7 @@ nearest_to(demo_vectors,"good")
 # What's the equivalent word for a female teacher that "guy" is for
 # a male one?
 
-nearest_to(demo_vectors,"guy" - "man" + "woman")
+nearest_to(demo_vectors,~ "guy" - "man" + "woman")
 
 }
 

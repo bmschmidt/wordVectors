@@ -10,10 +10,9 @@
 \arguments{
 \item{x}{The model to plot}
 
-\item{...}{Further arguments passed to tsne::tsne.
-(Note: not to plot.)}
+\item{method}{The method to use for plotting. "pca" is principal components, "tsne" is t-sne}
 
-\item{y}{(ignored)}
+\item{...}{Further arguments passed to the plotting method.}
 }
 \value{
 The TSNE model (silently.)

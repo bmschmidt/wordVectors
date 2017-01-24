@@ -1,26 +1,38 @@
-
 # This package uses a custom environment to evaluate
 # arithmetic on vectorSpaceModels.
 
+sub_out_tree = function(tree, context) {
+  # This is a whitelist of operators that I think are basic for vector math.
+  # It's possible it could be expanded.
 
-vector_evaluation_environment = new.env()
-with( # 'with' so that the matrix_context assignment below works.
-  vector_evaluation_environment,
-     lapply(c("+","-","^","/","*"), function(function_name) {
-       assign(
-        function_name,
-        function(e1,e2=NULL) {
-          if (is.character(e1)) e1 <- matrix_context[[e1]]
-          if (is.character(e2)) e2 <- matrix_context[[e2]]
-          # I think this is only relevant for addition and subtraction
-          if (is.null(e2)) {return(.Primitive(function_name)(e1))}
-          .Primitive(function_name)(e1,e2)
-        },
-        envir = vector_evaluation_environment
-      )
-    })
-)
+  # This might fail if you try to pass a reference to a basic
+  # arithmetic operator, or something crazy like that.
 
+  if (deparse(tree[[1]]) %in% c("+","*","-","/","^","log","sqrt","(")) {
+    for (i in 2:length(tree)) {
+      tree[[i]] <- sub_out_tree(tree[[i]],context)
+    }
+  }
+  if (is.character(tree)) {
+    return(context[[tree]])
+  }
+  return(tree)
+}
+
+sub_out_formula = function(formula,context) {
+  # Despite the name, this will work on something that
+  # isn't a formula. That's by design: we want to allow
+  # basic reference passing, and also to allow simple access
+  # to words.
+
+  if (class(context) != "VectorSpaceModel") return(formula)
+  if (class(formula)=="formula") {
+    formula[[2]] <- sub_out_tree(formula[[2]],context)
+    return(eval(formula[[2]]))
+  }
+  if (is.character(formula)) {return(context[[formula]])}
+  return(formula)
+}
 
 #' Vector Space Model class
 #'
@@ -74,7 +86,8 @@ square_magnitudes = function(object) {
 #' @param x The vectorspace model to subset
 #' @param i The row numbers to extract
 #' @param j The column numbers to extract
-#' @param j Other arguments to extract (unlikely to be useful).
+#' @param ... Other arguments passed to extract (unlikely to be useful).
+#'
 #' @param drop Whether to drop columns. This parameter is ignored.
 #' @return A VectorSpaceModel
 #'
@@ -178,10 +191,8 @@ setMethod("show","VectorSpaceModel",function(object) {
 #' This plots only the first 300 words in the model.
 #'
 #' @param x The model to plot
-#' @param y (ignored)
-#' @param method
-#' @param ... Further arguments passed to tsne::tsne.
-#' (Note: not to plot.)
+#' @param method The method to use for plotting. "pca" is principal components, "tsne" is t-sne
+#' @param ... Further arguments passed to the plotting method.
 #'
 #' @return The TSNE model (silently.)
 #' @export
@@ -275,8 +286,6 @@ read.vectors <- function(filename,vectors=guess_n_cols(),binary=NULL,...) {
 #' names matching that pattern will be included in the read; all others will be skipped.
 #' @return A VectorSpaceModel object
 #' @export
-#'
-#'
 
 read.binary.vectors = function(filename,nrows=Inf,cols="All", rowname_list = NULL, rowname_regexp = NULL) {
   if (!is.null(rowname_list) && !is.null(rowname_regexp)) {stop("Specify a whitelist of names or a regular expression to be applied to all input, not both.")}
@@ -457,12 +466,17 @@ filter_to_rownames <- function(matrix,words) {
 #' @return A matrix. Rows correspond to entries in x; columns to entries in y.
 #'
 #' @examples
+#'
+#' # Inspect the similarity of several academic disciplines by hand.
 #' subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=FALSE]]
 #' similarities = cosineSimilarity(subjects,subjects)
 #'
+#' # Use 'nearest_to' to build up a large list of similar words to a seed set.
 #' subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=TRUE]]
 #' new_subject_list = nearest_to(demo_vectors,subjects,20)
-#' new_subjects = demo_vectors[[names(new_subject_list),average=FALSE]]
+#' new_subjects = demo_vectors[[new_subject_list$word,average=FALSE]]
+#'
+#' # Plot the cosineDistance of these as a dendrogram.
 #' plot(hclust(as.dist(cosineDist(new_subjects,new_subjects))))
 #'
 #' @export
@@ -473,23 +487,7 @@ cosineSimilarity <- function(x,y) {
   # However, we do a little type-checking and a few speedups.
 
   # Allow non-referenced characters to refer to the original matrix.
-  if (class(x)=="VectorSpaceModel") {
-    y = tryCatch(
-      force(y),
-      error = function(e) {
-        if (e[[1]]=="non-numeric argument to binary operator" ||
-            e[[1]]=="invalid argument to unary operator"
-            ){
-          assign("matrix_context",x,envir=vector_evaluation_environment)
-          parent.env(vector_evaluation_environment) = parent.frame()
-          y = eval(substitute(y),envir = vector_evaluation_environment)
-        } else {e}
-      })
-  }
-  # It's also cool to just pass a character.
-  if (is.character(y)) {
-    y = x[[y]]
-  }
+  y = sub_out_formula(y,x)
 
   if (!(is.matrix(x) || is.matrix(y))) {
     if (length(x)==length(y)) {
@@ -527,7 +525,8 @@ cosineSimilarity <- function(x,y) {
 #' @param x A matrix, VectorSpaceModel, or vector.
 #' @param y A matrix, VectorSpaceModel, or vector.
 #'
-#' @return A matrix whose dimnames are rownames(x), rownames(y)
+#' @return A matrix whose dimnames are rownames(x), rownames(y) and whose entires are
+#' the associated distance.
 #'
 #' @export
 cosineDist <- function(x,y) {
@@ -537,8 +536,11 @@ cosineDist <- function(x,y) {
 #' Project each row of an input matrix along a vector.
 #'
 #' @param matrix A matrix or VectorSpaceModel
-#' @param vector A vector (or an object coercable to a vector, see project)
+#' @param vector A vector (or object coercable to a vector)
 #' of the same length as the VectorSpaceModel.
+#'
+#'
+#' @description As with 'cosineSimilarity
 #'
 #' @return A new matrix or VectorSpaceModel of the same dimensions as `matrix`,
 #' each row of which is parallel to vector.
@@ -551,7 +553,7 @@ cosineDist <- function(x,y) {
 project = function(matrix,vector) {
   # The matrix is a matrix:
   # b is a vector to reproject the matrix to be orthogonal to.
-  vector = eval_with_named_matrix(substitute(vector),matrix)
+  vector = sub_out_formula(vector,matrix)
   b = as.vector(vector)
   if (length(b)!=ncol(matrix)) {
     stop("The vector must be the same length as the matrix it is being compared to")
@@ -590,34 +592,43 @@ reject = function(matrix,vector) {
 #' Return the n closest words in a VectorSpaceModel to a given vector.
 #'
 #' @param matrix A matrix or VectorSpaceModel
-#' @param vector  A vector (or an object coercable to a vector, see project)
-#' of the same length as the VectorSpaceModel. Or, for convenience a string
-#' representing a word in the passed matrix. See examples.
+#' @param vector  A vector (or a string or a formula coercable to a vector)
+#' of the same length as the VectorSpaceModel. See below.
 #' @param n The number of closest words to include.
 #' @param as_df Return as a data.frame? If false, returns a named vector, for back-compatibility.
 #' @param fancy_names If true (the default) the data frame will have descriptive names like
-#' 'similarity to "king+queen-man"'; otherwise, just 'similarity.'
+#' 'similarity to "king+queen-man"'; otherwise, just 'similarity.' The default can speed up
+#'  interactive exploration.
 #'
 #' @return A sorted data.frame with columns for the words and their similarity
-#' to the target vector. (Or, if fancy_names==FALSE, a named vector of similarities.)
+#' to the target vector. (Or, if as_df==FALSE, a named vector of similarities.)
 #'
 #' @description This is a convenience wrapper around the most common use of
 #' 'cosineSimilarity'; the listing of several words similar to a given vector.
-#' cosineSimilarity.
-#' This returns a data.frame suitable for plotting, etc,
-#' cosineSimilarity is more powerful--you can, for instance, explore the matrix
-#' of relations between several words. But with n=Inf, nearest_to is often better for
+#' Unlike cosineSimilarity, it returns a data.frame object instead of a matrix.
+#' cosineSimilarity is more powerful, because it can compare two matrices to
+#' each other; nearest_to can only take a vector or vectorlike object as its second argument.
+#' But with (or without) the argument n=Inf, nearest_to is often better for
 #' plugging directly into a plot.
+#'
+#' As with cosineSimilarity, the second argument can take several forms. If it's a vector or
+#' matrix slice, it will be taken literally. If it's a character string, it will
+#' be interepreted as a word and the associated vector from `matrix` will be used. If
+#' a formula, any strings in the formula will be converted to rows in the associated `matrix`
+#' before any math happens.
 #'
 #' @examples
 #'
 #' # Synonyms and similar words
 #' nearest_to(demo_vectors,demo_vectors[["good"]])
 #'
-#' If 'matrix' is a VectorSpaceModel object,
-#' you can also just enter a string directly, and
-#' it will be evaluated in the context of the passed matrix.
+#' # If 'matrix' is a VectorSpaceModel object,
+#' # you can also just enter a string directly, and
+#' # it will be evaluated in the context of the passed matrix.
 #'
+#' nearest_to(demo_vectors,"good")
+#'
+#' # You can also express more complicated formulas.
 #'
 #' nearest_to(demo_vectors,"good")
 #'
@@ -625,29 +636,13 @@ reject = function(matrix,vector) {
 #' # What's the equivalent word for a female teacher that "guy" is for
 #' # a male one?
 #'
-#' nearest_to(demo_vectors,"guy" - "man" + "woman")
+#' nearest_to(demo_vectors,~ "guy" - "man" + "woman")
 #'
 #' @export
 nearest_to = function(matrix, vector, n=10, as_df = TRUE, fancy_names = TRUE) {
   label = deparse(substitute(vector),width.cutoff=500)
-  if (class(matrix)=="VectorSpaceModel") {
-    message(vector)
-    vector = tryCatch(
-      force(vector),
-      error = function(e) {
-        if (e[[1]]=="non-numeric argument to binary operator" ||
-            e[[1]]=="invalid argument to unary operator"
-        ){
-          assign("matrix_context",matrix,envir=vector_evaluation_environment)
-          parent.env(vector_evaluation_environment) = parent.frame()
-          vector = eval(substitute(vector),envir = vector_evaluation_environment)
-        } else {e}
-      })
-  }
-  # It's also cool to just pass a character.
-  if (is.character(vector)) {
-    vector = matrix[[vector]]
-  }
+  if (substr(label,1,1)=="~") {label = substr(label,2,500)}
+
   # The actually wrapping.
   sims = cosineSimilarity(matrix,vector)
 

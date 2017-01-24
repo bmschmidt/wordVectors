@@ -1,6 +1,7 @@
 context("Read and Write works")
-library(dplyr)
 
+
+## TODO: Add tests for non-binary format; check actual value of results; test reading of slices.
 
 test_that("Writing works",
           expect_null(
@@ -15,11 +16,4 @@ test_that("Reading Works",
             "VectorSpaceModel"
           )
 )
-
-test_that("Distance is between 0 and 2 (pt 1)",
-          expect_lt(
-            max(cosineDist(demo_vectors,demo_vectors)),
-            2 + 1e07)
-)
-
 

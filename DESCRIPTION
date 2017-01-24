@@ -1,7 +1,7 @@
 Package: wordVectors
 Type: Package
 Title: Tools for creating and analyzing vector-space models of texts
-Version: 1.4
+Version: 2.0
 Date: 2016-01-23
 Author: Ben Schmidt, Jian Li
 Maintainer: Ben Schmidt <bmschmidt@gmail.com>
@@ -23,5 +23,7 @@ Imports:
 Suggests:
     stringi,
     tsne,
-    maggritr
+    maggritr,
+    testthat,
+    ggplot2
 RoxygenNote: 5.0.1

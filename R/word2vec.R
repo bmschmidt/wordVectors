@@ -151,7 +151,7 @@ prep_word2vec <- function(origin,destination,
     while(length(lines <- readLines(con, n = 1000, warn = FALSE))>0) {
       message(".",appendLF=F)
       if(using_stringi) {
-        words = unlist(stri_extract_all_words(lines))
+        words = unlist(stringi::stri_extract_all_words(lines))
       } else {
         words = non_choking_strsplit(lines,split_characters,perl=T)
       }
@@ -200,7 +200,10 @@ prep_word2vec <- function(origin,destination,
 #' @param min_count Minimum times a word must appear to be included in the samples.
 #'   High values help reduce model size.
 #' @param threshold Threshold value for determining if pairs of words are phrases.
+#' @param force Whether to overwrite existing files at the output location. Default FALSE
+#'
 #' @return The name of output_file, the trained file where common phrases are now joined.
+#'
 #' @export
 #' @examples
 #' \dontrun{

@@ -6,15 +6,16 @@ An R package for building and exploring word embedding models.
 
 # Description
 
-This package does three major things:
+This package does three major things to make it easier to work with word2vec and other vectorspace models of language.
 
-1. [Trains word2vec models](#creating-text-vectors) using an extended Jian Li's word2vec code; reads and writes the binary word2vec format so that you can import pre-trained models such as Google's; and provides tools for reading only *part* of a model so you can explore a model in memory-limited situations.
-2. [Creates a new `VectorSpaceModel` class in R that gives a better syntax for exploring a word2vec or GloVe model than native matrix methods.](#vectorspacemodel-object) For example, instead of writing `model[rownames(model)=="king",]`, you can write `model[["king"]]`.
+1. [Trains word2vec models](#creating-text-vectors) using an extended Jian Li's word2vec code; reads and writes the binary word2vec format so that you can import pre-trained models such as Google's; and provides tools for reading only *part* of a model (rows or columns) so you can explore a model in memory-limited situations.
+2. [Creates a new `VectorSpaceModel` class in R that gives a better syntax for exploring a word2vec or GloVe model than native matrix methods.](#vectorspacemodel-object) For example, instead of writing `model[rownames(model)=="king",]`, you can write `model[["king"]]`, and instead of writing `vectors %>% nearest_to(vectors[rownames(vectors)=="king",] - vectors[rownames(vectors)=="man",] + vectors[rownames(vectors)=="woman",])` (whew!), you can write
+`vectors %>% nearest_to(~"king" - "man" + "woman")`.
 3. [Implements several basic matrix operations that are useful in exploring word embedding models including cosine similarity, nearest neighbor, and vector projection](#useful-matrix-operations) with some caching that makes them much faster than the simplest implementations.
 
 ### Quick start
 
-For a step-by-step interactive demo that includes installation and training a model on 77 historical cookbooks from Michigan State University, [jump to the quick-start guide](#quick-start).
+For a step-by-step interactive demo that includes installation and training a model on 77 historical cookbooks from Michigan State University, [see the introductory vignette.](#quick-start).
 
 ### Credit
 
@@ -23,6 +24,8 @@ This includes an altered version of Tomas Mikolov's original C code for word2vec
 Right now, it [does not (I don't think) install under Windows 8](https://github.com/bmschmidt/wordVectors/issues/2).  Help appreciated on that thread. OS X, Windows 7, Windows 10, and Linux install perfectly well, with one or two exceptions. 
 
 It's not extremely fast, but once the data is loaded in most operations happen in suitable time for exploratory data analysis (under a second on my laptop.)
+
+For high-performance analysis of models, C or python's numpy/gensim will likely be better than this package, in part because R doesn't have support for single-precision floats. The goal of this package is to facilitate clear code and exploratory data analysis of models.
 
 ## Creating text vectors.
 
@@ -52,14 +55,15 @@ In this package, you can simply access it by using the double brace operators:
 vector_set[["king"]] - vector_set[["man"]] + vector_set[["woman"]]
 ```
 
+(And in the context of the custom functions, as a formula like `~"king" - "man" + "woman"`: see below).
+
 Since frequently an average of two vectors provides a better indication, multiple words can be collapsed into a single vector by specifying multiple labels. For example, this may provide a slightly better gender vector:
 
 ```{r}
 vector_set[["king"]] - vector_set[[c("man","men")]] + vector_set[[c("woman","women")]]
 ```
 
-Sometimes you want to subset *without* averaging. You can do this with the argument `average==FALSE` to 
-the subset.
+Sometimes you want to subset *without* averaging. You can do this with the argument `average==FALSE` to the subset. This is particularly useful for comparing slices of the matrix to itself in similarity operations.
 
 ```{r}
 cosineSimilarity(vector_set[[c("man","men","king"),average=F]], vector_set[[c("woman","women","queen"),average=F]]
@@ -67,7 +71,8 @@ cosineSimilarity(vector_set[[c("man","men","king"),average=F]], vector_set[[c("w
 
 ## A few native functions defined on the VectorSpaceModel object.
 
-The native `show` method just prints the dimensions; the native `print` method does some crazy reductions with the T-SNE package (installation required for functionality) because T-SNE is a nice way to reduce down the size of vectors.
+The native `show` method just prints the dimensions; the native `plot` method does some crazy reductions with the T-SNE package (installation required for functionality) because T-SNE is a nice way to reduce down the size of vectors, **or** lets you pass `method='pca'` to array a full set or subset by the first two principal components.
+
 
 ## Useful matrix operations
 
@@ -81,7 +86,7 @@ Each takes a `VectorSpaceModel` as its first argument. Sometimes, it's appropria
   * `nearest_to(VSM,vector,n)` wraps a particularly common use case for `cosineSimilarity`, of finding the top `n` terms in a `VectorSpaceModel` closest to term m
   * `project(VSM,vector)` takes a `VectorSpaceModel` and returns the portion parallel to the vector `vector`. 
   * `reject(VSM,vector)` is the inverse of `project`; it takes a `VectorSpaceModel` and returns the portion orthogonal to the vector `vector`. This makes it possible, for example, to collapse a vector space by removing certain distinctions of meaning.
-  * `magnitudes` calculated the magnitude of each element in a VSM. This is useful in.
+  * `magnitudes` calculated the magnitude of each element in a VSM. This is useful in many operations.
   
 All of these functions place the VSM object as the first argument. This makes it easy to chain together operations using the `magrittr` package. For example, beginning with a single vector set one could find the nearest words in a set to a version of the vector for "bank" that has been decomposed to remove any semantic similarity to the banking sector.
 
@@ -93,6 +98,15 @@ not_that_kind_of_bank = chronam_vectors[["bank"]] %>%
       reject(chronam_vectors[["check"]])
 chronam_vectors %>% nearest_to(not_that_kind_of_bank)
 ```
+
+These functions also allow an additional layer of syntactic sugar when working with word vectors. 
+
+Or even just as a formula, if you're working entirely with a single model, so you don't have to keep referring to words; instead, you can use a formula interface to reduce typing and increase clarity.
+
+```{r}
+vectors %>% nearest_to(~ "king" - "man" + "woman")
+```
+
 
 # Quick start
 
@@ -109,72 +123,14 @@ One of the major hurdles to running word2vec for ordinary people is that it requ
 
 4. Install the latest version of this package from Github by pasting in the following.
     ```R
-    library(devtools)
-    install_github("bmschmidt/wordVectors")
+    devtools::install_github("bmschmidt/wordVectors")
     ```
     Windows users may need to install "Rtools" as well: if so, a message to this effect should appear in red on the screen. This may cycle through a very large number of warnings: so long as it says "warning" and not "error", you're probably OK.
 
-## Testing the setup
+## Train a model.
 
-We'll test the setup by running a complete VSM. First, download and extract a zip file of cookbooks from the MSU library by pasting the following lines.
+For instructions on training, see the [introductory vignette](https://github.com/bmschmidt/wordVectors/blob/master/vignettes/introduction.Rmd)
 
-```{r}
-if (!file.exists("cookbooks.zip")) {
-  download.file("http://archive.lib.msu.edu/dinfo/feedingamerica/cookbook_text.zip","cookbooks.zip")
-}
-unzip("cookbooks.zip",exdir="cookbooks")
-```
+## Explore an existing model.
 
-Then load the wordVectors package you have already installed.
-```{r}
-library(wordVectors)
-```
-
-Next, we build a single text file consisting of all the cookbooks converted to lowercase with punctuation removed.
-
-**Note**: this `prep_word2vec` function is *extremely* inefficient compared to text parsing functions written in python or sed or pretty much any language you can think of. I'm only including it for Windows compatibility of examples and non-programmers. If you know how to create a file with punctuation already stripped or separated any other way, I **strongly** recommend doing it that way.  But if you're working with a few hundred documents, this will get the job done, slowly. On the cookbooks, it should take a couple minutes. (For reference: in a console,  `perl -pe 's/[^A-Za-z_0-9 \n]/ /g;' cookbooks/* > cookbooks.txt` will do the same thing in a couple *seconds*. Seriously, I have no idea how to write fast R text-parsing code.)
-
-```{r}
-prep_word2vec("cookbooks","cookbooks.txt",lowercase=T)
-```
-
-Now we *train* the model. This can take quite a while. In RStudio I've noticed that this appears to hang, but if you check processors it actually still runs. Try it on smaller portions first, and then let it take time: the training function can take hours for tens of thousands of books.
-
-The 'threads' parameter is the number of processors to use on your computer.
-
-```{r}
-model = train_word2vec("cookbooks.txt",output="cookbook_vectors.bin",threads = 3,vectors = 100,window=12)
-```
-
-* NOTE: If at any point you want to *read in* a previously trained model, you can do so by typing `model =  read.vectors("cookbook_vectors.bin")`
-
-Now we have a model in memory, trained on about 10 million words from 77 cookbooks. What can it tell us about food?
-
-Well, you can run some basic operations to find the nearest elements:
-
-```{r}
-nearest_to(model,model[["fish"]])
-```
-
-With that list, you can expand out further to search for multiple words:
-
-```{r}
-nearest_to(model,model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],50)
-```
-
-Now we have a pretty expansive list of potential fish-related words from old cookbooks. This may be useful for something in real life.
-
-Or we can just arrange them somehow. If you have the tsne package installed, (type `install.packages("tsne")` to download it), you can plot these words in a reduced dimensional space. In this case, it doesn't look like much of anything.
-
-```{r}
-some_fish = nearest_to(model,model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],50)
-plot(filter_to_rownames(model,names(some_fish)))
-```
-
-But this set actually gives a fairly nicely clustered set of results if you plot the top words in the whole thing.
-
-```{r}
-plot(model)
-```
-
-There's a lot of other stuff you can do besides just measuring nearness: you can do analogies, projection, and more complicated plots. But for that you should read my blog posts on this.
+For instructions on exploration, see the end of the [introductory vignette](https://github.com/bmschmidt/wordVectors/blob/master/vignettes/introduction.Rmd), or the slower-paced [vignette on exploration](https://github.com/bmschmidt/wordVectors/blob/master/vignettes/exploration.Rmd)

@@ -12,7 +12,8 @@ cosineDist(x, y)
 \item{y}{A matrix, VectorSpaceModel, or vector.}
 }
 \value{
-A matrix whose dimnames are rownames(x), rownames(y)
+A matrix whose dimnames are rownames(x), rownames(y) and whose entires are
+the associated distance.
 }
 \description{
 Calculate the cosine distance between two vectors.

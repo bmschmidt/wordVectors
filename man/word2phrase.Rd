@@ -20,6 +20,8 @@ prints progress regularly.}
 High values help reduce model size.}
 
 \item{threshold}{Threshold value for determining if pairs of words are phrases.}
+
+\item{force}{Whether to overwrite existing files at the output location. Default FALSE}
 }
 \value{
 The name of output_file, the trained file where common phrases are now joined.
