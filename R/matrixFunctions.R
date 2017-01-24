@@ -1,6 +1,11 @@
-# This package uses a custom environment to evaluate
-# arithmetic on vectorSpaceModels.
-
+#' Internal function to subsitute strings for a tree. Allows arithmetic on words.
+#'
+#' @noRd
+#'
+#' @param tree an expression from a formula
+#' @param context the VSM context in which to parse it.
+#'
+#' @return a tree
 sub_out_tree = function(tree, context) {
   # This is a whitelist of operators that I think are basic for vector math.
   # It's possible it could be expanded.
@@ -19,13 +24,21 @@ sub_out_tree = function(tree, context) {
   return(tree)
 }
 
+#' Internal function to wrap for sub_out_tree. Allows arithmetic on words.
+#'
+#' @noRd
+#'
+#' @param formula A formula; string arithmetic on the LHS, no RHS.
+#' @param context the VSM context in which to parse it.
+#'
+#' @return an evaluated formula.
 sub_out_formula = function(formula,context) {
   # Despite the name, this will work on something that
   # isn't a formula. That's by design: we want to allow
   # basic reference passing, and also to allow simple access
   # to words.
 
-  if (class(context) != "VectorSpaceModel") return(formula)
+  if (class(context) != "VectorSpaceModel") {return(formula)}
   if (class(formula)=="formula") {
     formula[[2]] <- sub_out_tree(formula[[2]],context)
     return(eval(formula[[2]]))
