@@ -1,0 +1,26 @@
+
+```{r}
+library(wordVectors)
+library(magrittr)
+
+model = read.vectors("~/Dropbox/lib/R/hum2vec/cookbooks.bin")
+```
+
+```{r}
+model
+```
+
+Anything in the grey boxes will saved for later.
+
+To create another grey box, just copy and paste an existing one. Or type out the characters by hand.
+
+```{r}
+model %>% nearest_to(model[["fish"]])
+```
+
+With that list, you can expand out further to search for multiple words:
+
+```{r}
+model %>% 
+  nearest_to(model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],50)
+```

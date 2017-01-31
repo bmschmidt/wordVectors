@@ -1,0 +1,86 @@
+---
+title: "Word2Vec translation"
+author: "Ben Schmidt"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Intro 
+
+```{r}
+vectors = read.vectors("~/Desktop/GoogleNews-vectors-negative300.bin",nrow=50000) %>% normalize_lengths
+```
+
+```{r}
+vectors = vectors[!grepl("_",rownames(vectors)),]
+
+vectors = vectors %>% normalize_lengths()
+
+gender = vectors[[c("he","him","his")]] - vectors[[c("she","her","hers")]]
+
+genderless = vectors %>% reject(gender)
+gender_only = vectors %>% project(gender)
+
+#gender_only = gender_only[[c("he","she","man","woman"),average=F]]
+mean = apply(gender_only,2,mean)
+
+swapped_on_one = apply(gender_only,1,function(row) {
+  deviation = row - mean
+  # that is, row = mean + deviation
+  # reverse sign
+  return(5*(mean - deviation))
+  }) %>% t
+
+swapped = (genderless + swapped_on_one) %>% new("VectorSpaceModel",.)
+
+vectors %>% nearest_to(swapped[["him"]])
+
+swap = function(words) {
+  sapply(words,function(word){
+    vectors %>% nearest_to(swapped[[word]],1) %>% names
+  })
+}
+
+vectors %>% nearest_to(swapped[["ladies"]])
+vectors %>% nearest_to(vectors[["ladies"]])
+vectors %>% nearest_to(genderless[["ladies"]])
+
+
+library(stringr)
+
+str_split("All the single ladies"," ") %>% unlist %>% swap
+swap(starting) %>% paste(collapse=" ")
+```
+
+
+Jane Austen
+
+```{r}
+
+library(janeaustenr)
+library(dplyr)
+library(tidytext)
+library(stringr)
+
+original_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(linenumber = row_number(),
+         chapter = cumsum(str_detect(text, regex("^chapter [\\divxlc]",
+                                                 ignore_case = TRUE)))) %>%
+  ungroup()
+
+tidy_books <- original_books %>%
+  unnest_tokens(word, text)
+
+tidy_books %>% filter(book=="Pride & Prejudice") %>%
+  filter(chapter==1) %>%
+  mutate(replacement)
+  
+
+
+
+```
