@@ -1,6 +1,5 @@
 context("Read and Write works")
 
-
 ## TODO: Add tests for non-binary format; check actual value of results; test reading of slices.
 
 test_that("Writing works",

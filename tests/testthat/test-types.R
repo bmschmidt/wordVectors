@@ -1,4 +1,3 @@
-#source("sample-data.r")
 context("VectorSpaceModel Class Works")
 
 test_that("Class Exists",
