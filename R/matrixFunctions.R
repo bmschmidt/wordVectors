@@ -607,6 +607,43 @@ reject = function(matrix,vector) {
   return(val)
 }
 
+
+#' Compress or expand a vector space model along a vector.
+#'
+#' @param matrix A matrix or VectorSpaceModel
+#' @param vector A vector (or an object coercable to a vector, see project)
+#' of the same length as the VectorSpaceModel.
+#' @param multiplier A scaling factor. See below.
+#'
+#' @description This is an experimental function that might be useful sometimes.
+#' 'Reject' flatly eliminates a particular dimension from a vectorspace, essentially
+#' squashing out a single dimension; 'distend' gives finer grained control, making it
+#' possible to stretch out or compress in the same space. High values of 'multiplier'
+#' make a given vector more prominent; 1 keeps the original matrix untransformed; values
+#' less than one compress distances along the vector; and 0 is the same as "reject,"
+#' eliminating a vector entirely. Values less than zero will do some type of mirror-image
+#' universe thing, but probably aren't useful?
+#'
+#'
+#' @return A new matrix or VectorSpaceModel of the same dimensions as `matrix`,
+#' distended along the vector 'vector' by factor 'multiplier'.
+#'
+#' See `project` for more details and usage.
+#'
+#' @examples
+#' nearest_to(demo_vectors,"sweet")
+#'
+#' # Stretch out the vectorspace 4x longer along the gender direction.
+#' more_sexist = distend(demo_vectors, ~ "man" + "he" - "she" -"woman", 4)
+#'
+#' nearest_to(more_sexist,"sweet")
+#'
+#' @export
+distend = function(matrix,vector, multiplier) {
+  parallel_track = project(matrix,vector)
+  return(new("VectorSpaceModel",matrix - parallel_track*(multiplier-1)))
+}
+
 #' Return the n closest words in a VectorSpaceModel to a given vector.
 #'
 #' @param matrix A matrix or VectorSpaceModel
