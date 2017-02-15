@@ -1,3 +1,36 @@
+#' Improve Vectorspace
+#'
+#'
+#' @param vectorspace A VectorSpacemodel to be improved.
+#' @param D The number of principal components to eliminate.
+#'
+#' @citation
+#' @return A VectorSpaceModel object, transformed from the original.
+#' @export
+#'
+#' @examples
+improve_vectorspace = function(vectorspace,D=round(ncol(vectorspace)/100)) {
+  mean = new("VectorSpaceModel",
+             matrix(apply(vectorspace,2,mean),
+                    ncol=ncol(vectorspace))
+  )
+  vectorspace = vectorspace-mean
+  pca = prcomp(vectorspace)
+
+  # I don't totally understand the recommended operation in the source paper, but this seems to do much
+  # the same thing uses the internal functions of the package to reject the top i dimensions one at a time.
+  drop_top_i = function(vspace,i) {
+    if (i<=0) {vspace} else if (i==1) {
+      vspace %>% reject(pca$rotation[,i])
+      }
+    else {
+      vspace %>% reject(pca$rotation[,i]) %>% drop_top_i(i-1)
+    }
+  }
+  better = vectorspace %>% drop_top_i(D)
+}
+
+
 #' Internal function to subsitute strings for a tree. Allows arithmetic on words.
 #'
 #' @noRd
@@ -32,6 +65,7 @@ sub_out_tree = function(tree, context) {
 #' @param context the VSM context in which to parse it.
 #'
 #' @return an evaluated formula.
+
 sub_out_formula = function(formula,context) {
   # Despite the name, this will work on something that
   # isn't a formula. That's by design: we want to allow
