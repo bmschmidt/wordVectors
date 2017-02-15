@@ -21,4 +21,3 @@ A VectorSpaceModel of a single row.
 \description{
 VectorSpaceModel subsetting
 }
-

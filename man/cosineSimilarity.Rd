@@ -35,4 +35,3 @@ new_subjects = demo_vectors[[new_subject_list$word,average=FALSE]]
 plot(hclust(as.dist(cosineDist(new_subjects,new_subjects))))
 
 }
-

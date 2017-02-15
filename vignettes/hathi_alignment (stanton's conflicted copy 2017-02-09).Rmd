@@ -1,0 +1,131 @@
+---
+title: "In-workshop materials"
+output: html_document
+---
+
+
+## Introduction
+
+```{r}
+knitr::opts_chunk$set(eval=FALSE)
+```
+
+
+```{r}
+library(wordVectors)
+library(magrittr)
+```
+
+
+## Alignment
+
+Alignment of multiple models presents fascinating, if poorly understood, opportunities.
+
+```{r setup}
+#library(wordVectors)
+library(magrittr)
+library(tidyverse)
+
+
+# If you downloaded these files, they're in a different folder.
+
+model_names = list.files("~/Dropbox/hathi_word2vec/",full.names = T) %>% Filter(function(x) {grepl("(All).*.bin",x)},.)
+models = read_group(model_names,nrow=50000)
+
+
+models[[4]] %>% nearest_to(models[[4]][["Dakota"]])
+
+```
+
+Align the models
+
+``` {r}
+
+aligned = align_models(models,shared_vocab_only = FALSE)
+
+stanford_plot(aligned, word = c("broadcast"), 15, transform_type = "mds")
+```
+
+```{r}
+stanford_plot(aligned, word = c("political"), 15, transform_type = "mds")
+```
+
+```{r}
+stanford_plot(aligned, word = c("Rome"), 10, transform_type = "mds") + theme_bw()
+```
+
+A good one. The shift towards the modern sciences--especially the *social* sciences--is pronounced, but the entombment of science in the *university* is a later development.
+
+```{r}
+stanford_plot(aligned, word = c("sciences","science"), 15, transform_type = "mds") + theme_bw()
+```
+
+```{r}
+stanford_plot(aligned, word = c("Russia"), 10, transform_type = "mds")
+```
+
+
+```{r}
+stanford_plot(aligned, word = c("Negro"), 10, transform_type = "mds") + theme_bw()
+```
+
+
+
+```{r}
+stanford_plot(aligned, word = c("hero"), 10, transform_type = "mds") + theme_bw()
+```
+
+
+```{r}
+stanford_plot(aligned, word = c("masculine","feminine"), 10, transform_type = "mds") + theme_bw()
+```
+
+```{r}
+stanford_plot(aligned, word = c("evolution"), 10, transform_type = "pca") + theme_bw()
+```
+
+
+```{r}
+aligned = align_models(models,shared_vocab_only = TRUE)
+
+change_matrix = lapply(2:length(aligned),function(i) {
+  aligned[[i-1]] - aligned[[i]]
+}) %>% do.call(cbind,.) %>% new("VectorSpaceModel",.)
+
+multi_set = aligned %>% do.call(cbind,.) %>% new("VectorSpaceModel",.)
+
+multi_set %>% nearest_to("science")
+change_matrix %>% nearest_to("game")
+
+```
+
+```{r}
+
+distance = function(mx,my) {sqrt(rowSums((mx - my)^2))}
+distmat = sapply(1:length(aligned),function(i) {
+  distance(aligned[[i]],aligned[[3]])
+})
+
+sort(-apply(distmat,1,mean))[1:100]
+
+stanford_plot(aligned,"liberty")
+
+stanford_plot(aligned, word = c("tyranny"), 15, transform_type = "mds")
+
+#Communism becomes taken *seriously*.
+stanford_plot(aligned, word = c("communism"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("english"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("empire"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("market"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("economy"), 15, transform_type = "pca")
+
+
+stanford_plot(aligned, word = c("empire"), 15, transform_type = "pca")
+
+stanford_plot(aligned, word = c("king","queen"), 15, transform_type = "pca")
+
+```

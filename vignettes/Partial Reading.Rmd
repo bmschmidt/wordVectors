@@ -1,0 +1,190 @@
+---
+title: "Vector Space Model Comparison"
+author: "Ben Schmidt"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Comparing Word2Vec models
+
+An important, but relatively undeveloped, aspect to exploratory data analysis on word embeddings is comparing multiple models to each other.
+
+This vignette walks through two examples. The first is comparing a model to a modified version of itself built through vector *rejection*. The second compares two completely different models built through alignment.
+
+```{r}
+library(wordVectors)
+library(magrittr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+We'll start of by comparing a model to a slightly transformed version of itself.
+
+```{r}
+
+google_part_1 = read.binary.vectors("~/vector_models/GoogleNewsPartial.bin",nrow=50000,cols=1:150)
+google_part_2 = read.binary.vectors("~/vector_models/GoogleNewsPartial.bin",nrow=50000,cols=151:300)
+
+aligned_pair <- align_models(google_part_1,google_part_2)
+
+
+google_part_1 %>% nearest_to(google_part_2[["good"]])
+
+goohah[[1]] %>% nearest_to(goohah[[2]][["good"]])
+goohah[[1]] %>% nearest_to(goohah[[1]][["good"]])
+
+```
+
+
+
+```{r}
+
+usage_slopegraph = function(vector, ..., n=10) {
+  sets = list(...)
+  names = eval(substitute(alist(...))) %>% purrr::map(deparse) %>% unlist
+  names(sets) = paste("set", 1:length(sets))
+  groups = lapply(1:length(sets), function(name) {
+    set = sets[[name]]
+    neighbors = nearest_to(set,vector,fancy_names=F,n=Inf)ssss
+    neighbors$rank = rank(-neighbors$similarity)
+    names(neighbors) = c("word",name,paste0("rank-",name))
+    neighbors %>% as.tbl
+  }) %>% purrr::reduce(inner_join)
+
+  in_top_n = groups %>% select(starts_with("rank-")) %>% apply(1,min) <= n
+
+  groups[in_top_n,] %>% ggplot() + 
+    geom_text(aes(y=`1`,label = word),hjust=1,x=1,alpha=.5) + 
+    geom_text(aes(y=`2`,label = word),hjust=0,x=2,alpha=.5) + 
+    geom_segment(aes(x=1,xend=2,y=`1`, yend=`2`)) + 
+    scale_x_continuous(limits=c(0,3)) +
+    scale_y_continuous(paste0("Cosine similarity to ",deparse(vector)))+ 
+    theme_bw() + 
+    labs (title=paste0("Similarity to '", deparse(vector),"' in the\nvectorspaces ", names[1], " (left) and\n", names[2], " (right)"))
+}
+
+
+usage_slopegraph(~ "warm", demo_vectors, genderless)
+compare_neighbors(sets = list("debiased"=twisted,"original"=demo_vectors),vector="woman",n=10)
+
+```
+
+The `%>%` is the pipe operator from magrittr; it helps to keep things organized, and is particularly useful with some of the things we'll see later. The 'similarity' scores here are cosine similarity in a vector space; 1.0 represents perfect similarity, 0 is no correlation, and -1.0 is complete opposition. In practice, vector "opposition" is different from the colloquial use of "opposite," and very rare. You'll only occasionally see vector scores below 0--as you can see above, "bad" is actually one of the most similar words to "good."
+
+When interactively exploring a single model (rather than comparing *two* models), it can be a pain to keep retyping words over and over. Rather than operate on the vectors, this package also lets you access the word directly by using R's formula notation: putting a tilde in front of it. For a single word, you can even access it directly, as so.
+
+```{r}
+demo_vectors %>% nearest_to("bad")
+```
+
+## Vector math
+
+The tildes are necessary syntax where things get interesting--you can do **math** on these vectors. So if we want to find the words that are closest to the *combination* of "good" and "bad" (which is to say, words that get used in evaluation) we can write (see where the tilde is?):
+
+```{r}
+
+demo_vectors %>% nearest_to(~"good"+"bad")
+
+# The same thing could be written as:
+# demo_vectors %>% nearest_to(demo_vectors[["good"]]+demo_vectors[["bad"]])
+```
+
+Those are words that are common to both "good" and "bad". We could also find words that are shaded towards just good but *not* bad by using subtraction.
+
+```{r}
+demo_vectors %>% nearest_to(~"good" - "bad")
+```
+
+> What does this "subtraction" vector mean? 
+> In practice, the easiest way to think of it is probably simply as 'similar to 
+> good and dissimilar to 'bad'. Omer and Levy's papers suggest this interpretation.
+> But taking the vectors more seriously means you can think of it geometrically: "good"-"bad" is
+> a vector that describes the difference between positive and negative.
+> Similarity to this vector means, technically, the portion of a words vectors whose
+> whose multidimensional path lies largely along the direction between the two words. 
+
+Again, you can easily switch the order to the opposite: here are a bunch of bad words:
+
+```{r}
+demo_vectors %>% nearest_to(~ "bad" - "good")
+```
+
+All sorts of binaries are captured in word2vec models. One of the most famous, since Mikolov's original word2vec paper, is *gender*. If you ask for similarity to "he"-"she", for example, you get words that appear mostly in a *male* context. Since these examples are from teaching evaluations, after just a few straightforwardly gendered words, we start to get things that only men are ("arrogant") or where there are very few women in the university ("physics")
+
+```{r}
+demo_vectors %>% nearest_to(~ "he" - "she")
+demo_vectors %>% nearest_to(~ "she" - "he")
+```
+
+## Analogies
+
+We can expand out the match to perform analogies. Men tend to be called 'guys'. 
+What's the female equivalent?
+In an SAT-style analogy, you might write `he:guy::she:???`.
+In vector math, we think of this as moving between points. 
+
+If you're using the mental framework of positive of 'similarity' and
+negative as 'dissimilarity,' you can think of this as starting at "guy",
+removing its similarity to "he", and additing a similarity to "she".
+
+This yields the answer: the most similar term to "guy" for a woman is "lady."
+
+```{r}
+demo_vectors %>% nearest_to(~ "guy" - "he" + "she")
+```
+
+If you're using the other mental framework, of thinking of these as real vectors, 
+you might phrase this in a slightly different way.
+You have a gender vector `("female" - "male")` that represents the *direction* of masculinity 
+to femininity. You can then add this vector to "guy", and that will take you to a new neighborhood. You might phrase that this way: note that the math is exactly equivalent, and
+only the grouping is different.
+
+```{r}
+demo_vectors %>% nearest_to("guy" + ("she" - "he"))
+```
+
+Principal components can let you plot a subset of these vectors to see how they relate. You can imagine an arrow from "he" to "she", from "guy" to "lady", and from "man" to "woman"; all run in roughly the same direction.
+
+```{r}
+
+demo_vectors[[c("lady","woman","man","he","she","guy","man"), average=F]] %>% 
+  plot(method="pca")
+
+```
+
+These lists of ten words at a time are useful for interactive exploration, but sometimes we might want to say 'n=Inf' to return the full list. For instance, we can combine these two methods to look at positive and negative words used to evaluate teachers. 
+
+First we build up three data_frames: first, a list of the 50 top evaluative words, and then complete lists of similarity to `"good" -"bad"` and `"woman" - "man"`. 
+
+```{r}
+top_evaluative_words = demo_vectors %>% 
+   nearest_to(~ "good"+"bad",n=75)
+
+goodness = demo_vectors %>% 
+  nearest_to(~ "good"-"bad",n=Inf) 
+
+femininity = demo_vectors %>% 
+  nearest_to(~ "she" - "he", n=Inf)
+```
+
+Then we can use tidyverse packages to join and plot these.
+An `inner_join` restricts us down to just those top 50 words, and ggplot
+can array the words on axes.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+top_evaluative_words %>%
+  inner_join(goodness) %>%
+  inner_join(femininity) %>% ggplot() + 
+  geom_text(aes(x=`similarity to "she" - "he"`,
+                y=`similarity to "good" - "bad"`,
+                label=word))
+```
+

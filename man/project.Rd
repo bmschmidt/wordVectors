@@ -22,4 +22,3 @@ it will be a VectorSpaceModel.
 \description{
 As with 'cosineSimilarity
 }
-

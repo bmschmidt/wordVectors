@@ -15,4 +15,3 @@ An object of class "VectorSpaceModel"
 \description{
 Convert to a Vector Space Model
 }
-

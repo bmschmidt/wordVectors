@@ -43,4 +43,3 @@ model=word2phrase("text8","vec.txt")
 \author{
 Tomas Mikolov
 }
-

@@ -18,4 +18,3 @@ Nothing
 \description{
 Write in word2vec binary format
 }
-
