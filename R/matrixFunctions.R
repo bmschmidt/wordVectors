@@ -1,3 +1,36 @@
+#' Improve Vectorspace
+#'
+#'
+#' @param vectorspace A VectorSpacemodel to be improved.
+#' @param D The number of principal components to eliminate.
+#'
+#' @citation
+#' @return A VectorSpaceModel object, transformed from the original.
+#' @export
+#'
+#' @examples
+improve_vectorspace = function(vectorspace,D=round(ncol(vectorspace)/100)) {
+  mean = new("VectorSpaceModel",
+             matrix(apply(vectorspace,2,mean),
+                    ncol=ncol(vectorspace))
+  )
+  vectorspace = vectorspace-mean
+  pca = prcomp(vectorspace)
+
+  # I don't totally understand the recommended operation in the source paper, but this seems to do much
+  # the same thing uses the internal functions of the package to reject the top i dimensions one at a time.
+  drop_top_i = function(vspace,i) {
+    if (i<=0) {vspace} else if (i==1) {
+      vspace %>% reject(pca$rotation[,i])
+      }
+    else {
+      vspace %>% reject(pca$rotation[,i]) %>% drop_top_i(i-1)
+    }
+  }
+  better = vectorspace %>% drop_top_i(D)
+}
+
+
 #' Internal function to subsitute strings for a tree. Allows arithmetic on words.
 #'
 #' @noRd
@@ -32,6 +65,7 @@ sub_out_tree = function(tree, context) {
 #' @param context the VSM context in which to parse it.
 #'
 #' @return an evaluated formula.
+
 sub_out_formula = function(formula,context) {
   # Despite the name, this will work on something that
   # isn't a formula. That's by design: we want to allow
@@ -136,7 +170,7 @@ setMethod("[","VectorSpaceModel",function(x,i,j,...,drop) {
 #'
 setMethod("-",signature(e1="VectorSpaceModel",e2="VectorSpaceModel"),function(e1,e2) {
     if (nrow(e1)==nrow(e2) && ncol(e1)==ncol(e2)) {
-      return (methods::new("VectorSpaceModel",callNextMethod()))
+      return (methods::new("VectorSpaceModel",e1@.Data-e2@.Data))
     }
     if (nrow(e2)==1) {
       return(
@@ -188,7 +222,7 @@ setMethod("[[","VectorSpaceModel",function(x,i,average=TRUE) {
 setMethod("show","VectorSpaceModel",function(object) {
   dims = dim(object)
   cat("A VectorSpaceModel object of ",dims[1]," words and ", dims[2], " vectors\n")
-  methods::show(unclass(object[1:min(nrow(object),10),1:min(ncol(object),6)]))
+  methods::show(unclass(object[1:min(nrow(object),10),1:min(ncol(object),6),drop=F]))
 })
 
 #' Plot a Vector Space Model.
@@ -334,7 +368,7 @@ read.binary.vectors = function(filename,nrows=Inf,cols="All", rowname_list = NUL
 
 
   returned_columns = col_number
-  if (is.integer(cols)) {
+  if (is.numeric(cols)) {
     returned_columns = length(cols)
   }
 
@@ -352,7 +386,7 @@ read.binary.vectors = function(filename,nrows=Inf,cols="All", rowname_list = NUL
     }
     rownames[i] <<- rowname
     row = readBin(a,numeric(),size=4,n=col_number,endian="little")
-    if (is.integer(cols)) {
+    if (is.numeric(cols)) {
       return(row[cols])
     }
     return(row)
@@ -445,7 +479,12 @@ magnitudes <- function(matrix) {
 #' @return An object of the same class as matrix
 #' @export
 normalize_lengths = function(matrix) {
+
   val = matrix/magnitudes(matrix)
+  if (inherits(val,"VectorSpaceModel")) {
+    val@.cache = new.env()
+  }
+  val
 }
 
 #' Reduce by rownames
@@ -600,6 +639,43 @@ reject = function(matrix,vector) {
   # The projection of the matrix that _does not_ lie parallel to a given vector.
   val = matrix-project(matrix,vector)
   return(val)
+}
+
+
+#' Compress or expand a vector space model along a vector.
+#'
+#' @param matrix A matrix or VectorSpaceModel
+#' @param vector A vector (or an object coercable to a vector, see project)
+#' of the same length as the VectorSpaceModel.
+#' @param multiplier A scaling factor. See below.
+#'
+#' @description This is an experimental function that might be useful sometimes.
+#' 'Reject' flatly eliminates a particular dimension from a vectorspace, essentially
+#' squashing out a single dimension; 'distend' gives finer grained control, making it
+#' possible to stretch out or compress in the same space. High values of 'multiplier'
+#' make a given vector more prominent; 1 keeps the original matrix untransformed; values
+#' less than one compress distances along the vector; and 0 is the same as "reject,"
+#' eliminating a vector entirely. Values less than zero will do some type of mirror-image
+#' universe thing, but probably aren't useful?
+#'
+#'
+#' @return A new matrix or VectorSpaceModel of the same dimensions as `matrix`,
+#' distended along the vector 'vector' by factor 'multiplier'.
+#'
+#' See `project` for more details and usage.
+#'
+#' @examples
+#' nearest_to(demo_vectors,"sweet")
+#'
+#' # Stretch out the vectorspace 4x longer along the gender direction.
+#' more_sexist = distend(demo_vectors, ~ "man" + "he" - "she" -"woman", 4)
+#'
+#' nearest_to(more_sexist,"sweet")
+#'
+#' @export
+distend = function(matrix,vector, multiplier) {
+  parallel_track = project(matrix,vector)
+  return(new("VectorSpaceModel",matrix - parallel_track*(multiplier-1)))
 }
 
 #' Return the n closest words in a VectorSpaceModel to a given vector.

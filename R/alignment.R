@@ -1,4 +1,4 @@
-#' Align two matrices with orthoganal procrustes
+#' Align two matrices with orthogonal procrustes
 #'
 #' @description Orthogonal procrustes determines a matrix rotation that
 #' best positions points from one arbitrary vectorspace into another. This
@@ -12,13 +12,25 @@
 #' Proceedings of ACL.
 #'
 #' @param x A reference matrix or VectorSpaceModel.
-#' @param y The matrix or VectorSpaceModel to be aligned.
+#' @param y The matrix or VectorSpaceModel to be rotated.
 #'
-#' @return A matrix of the same shape as y, projected into the space of x based on rownames.
+#' @return A matrix of the same shape as y, projected into the space of x.
 #' @export
 #'
 #' @examples
-procrustes = function(x, y, as_VSM = TRUE) {
+#'
+#' # Create a new model from the reference with gender rejected out.
+#' genderless <- demo_vectors %>% reject(~"man" - "woman") %>% reject(~"he" - "she")
+#'
+#' # The vector for "she" in the new space is only somewhat similar to the old one.
+#' demo_vectors[["she"]] %>% cosineSimilarity(genderless[["she"]])
+#'
+#' # We can re-align the genderless vectorspace into the original one.
+#' adjusted <- demo_vectors %>% procrustes(genderless)
+#'
+#' # Now the cosine similarity is ever-so-slightly higher.
+#' demo_vectors[["she"]] %>% cosineSimilarity(adjusted[["she"]])
+procrustes = function(x, y) {
   # The relevant parts pulled from the vegan `procrustes` function.
 
   reorder_rows = function(matrix,lookup=shared_vocab) matrix[match(lookup,rownames(matrix)),]
@@ -32,17 +44,32 @@ procrustes = function(x, y, as_VSM = TRUE) {
 
   sol = svd(XY)
   A = sol$v %*% t(sol$u)
-  Yrot = y %*% A
+  yRot <- y %*% A
+
+  if (inherits(y, "VectorSpaceModel")) {
+    new("VectorSpaceModel",yRot)
+    } else {yRot}
 }
 
 
+#' Plot models
+#'
+#' @param model_set
+#' @param word
+#' @param n
+#' @param transform_type
+#'
+#' @return
+#' @export
+#'
+#' @examples
 stanford_plot = function(model_set, word, n=20, transform_type = c("mds","pca")) {
 
   if (!require(ggplot2)) {stop("You need ggplot for this function: run 'install.packages(ggplot2)'")}
   model_set = Filter(function(model) {length(intersect(word,rownames(model))) > 0}, model_set)
   small_list = lapply(model_set, function(model) {
-    model %>% nearest_to(model[[word]],n)
-  }) %>% unname %>% unlist %>% names %>% unique
+    model %>% nearest_to(model[[word]],n,fancy_names=F)
+  }) %>% bind_rows %>% select(word) %>% unlist %>% unique
 
   just_this_word = lapply(model_set, function(mat) {
     mat[rownames(mat) %in% word,,drop=F]
@@ -95,12 +122,14 @@ stanford_plot = function(model_set, word, n=20, transform_type = c("mds","pca"))
 
 #' Title Align models.
 #'
-#' @param ... A number of VectorSpaceModels to align; or, alternatively, a single list
+#' @param ... A number of VectorSpaceModels to align as independent entries;
+#' or, alternatively, a single list
 #' of several vectorspace models to align.
-#' @param shared_vocab_only Whether the output models should all have the same, shared vocabulary;
-#' if FALSE, the original model
+#' @param shared_vocab_only Two models may have different words. If this variable is TRUE,
+#' (the default), the *entire* vocabular will be returned.
 #'
-#' @return
+#' @return A list of VectorSpaceModel objects. Each is rotated into the space defined by the first model,
+#' and altered so that each vector is of unit length.
 #' @export
 #'
 #' @examples
@@ -110,8 +139,16 @@ align_models = function(..., shared_vocab_only = TRUE) {
   # ... are models to be aligned.
   # alternatively, it can be a single *list* of models.
   models = list(...)
-  if (typeof(models)[[1]] == "list") {
+
+  if (typeof(models[[1]]) == "list") {
     models = models[[1]]
+  }
+
+  for (i in 1:length(models)) {
+    if (max(abs(1-square_magnitudes(models[[i]]))) > 1e-03) {
+      warning("Model #", i, " is not normalized: scaling so each vector is unit length")
+      models[[i]] <- normalize_lengths(models[[i]])
+    }
   }
 
   minify = function(matrix, lookup) matrix[match(lookup,rownames(matrix)),]
@@ -122,11 +159,25 @@ align_models = function(..., shared_vocab_only = TRUE) {
     models = lapply(models, minify, lookup = shared_vocab)
   }
 
-  combined = Reduce(function(x,y) {new("VectorSpaceModel",procrustes(x,y))},models,accumulate = TRUE)
+  combined = Reduce(
+    function(x,y) procrustes(x,y),
+    models,
+    accumulate = TRUE
+    )
+  # Keep the original names.
   names(combined) = names(models)
   combined
 }
 
+#' Read Group
+#'
+#' @param filenames A list of filenames naming VectorSpaceModels.
+#' @param ... Additional parameters passed to read_vectors
+#'
+#' @return
+#' @export
+#'
+#' @examples
 read_group = function(filenames,...) {
   # Additional parameters passed to read.vectors
   models = lapply(filenames, function(filename) {
@@ -135,12 +186,4 @@ read_group = function(filenames,...) {
   })
   names(models) = gsub(".*/|.bin|.txt","",filenames)
   models
-}
-
-
-plot_words = function(model, wordlist) {
-  filtered = model[[wordlist,average=FALSE]]
-  new_positions = data.frame(predict(prcomp(filtered)))
-  plot(new_positions[,1:2],type='n')
-  text(new_positions[,1:2],labels = rownames(filtered))
 }

@@ -22,18 +22,14 @@ library(magrittr)
 Alignment of multiple models presents fascinating, if poorly understood, opportunities.
 
 ```{r setup}
-library(shapes)
-library(wordVectors)
+#library(wordVectors)
 library(magrittr)
 library(tidyverse)
 
-#library(abind)
-
-source("R/alignment.R")
 
 # If you downloaded these files, they're in a different folder.
 
-model_names = list.files("~/Dropbox/hathi_word2vec/",full.names = T) %>% Filter(function(x) {grepl("(E,F).*.bin",x)},.)
+model_names = list.files("~/Dropbox/hathi_word2vec/",full.names = T) %>% Filter(function(x) {grepl("(All).*.bin",x)},.)
 models = read_group(model_names,nrow=50000)
 
 
@@ -47,18 +43,61 @@ Align the models
 
 aligned = align_models(models,shared_vocab_only = FALSE)
 
-stanford_plot(aligned, word = c("political"), 15, transform_type = "pca")
-
-stanford_plot(aligned, word = c("telephone"), 10, transform_type = "mds") + theme_bw()
-
-stanford_plot(aligned, word = c("secretary"), 15, transform_type = "pca") + theme_bw()
-
-stanford_plot(aligned, word = c("farm"), 10, transform_type = "pca")
-
-stanford_plot(aligned, word = c("love"), 10, transform_type = "pca")
-
+stanford_plot(aligned, word = c("broadcast"), 15, transform_type = "mds")
 ```
 
+```{r}
+stanford_plot(aligned, word = c("political"), 15, transform_type = "mds")
+```
+
+```{r}
+stanford_plot(aligned, word = c("Rome"), 10, transform_type = "mds") + theme_bw()
+```
+
+A good one. The shift towards the modern sciences--especially the *social* sciences--is pronounced, but the entombment of science in the *university* is a later development.
+
+```{r}
+stanford_plot(aligned, word = c("science","sciences"), 15, transform_type = "mds") + theme_bw()
+```
+
+```{r}
+stanford_plot(aligned, word = c("Russia"), 10, transform_type = "mds")
+```
+
+
+```{r}
+stanford_plot(aligned, word = c("Negro"), 10, transform_type = "mds") + theme_bw()
+```
+
+
+
+```{r}
+stanford_plot(aligned, word = c("hero"), 10, transform_type = "mds") + theme_bw()
+```
+
+
+```{r}
+stanford_plot(aligned, word = c("masculine","feminine"), 10, transform_type = "mds") + theme_bw()
+```
+
+```{r}
+stanford_plot(aligned, word = c("evolution"), 10, transform_type = "pca") + theme_bw()
+```
+
+
+```{r}
+aligned = align_models(models,shared_vocab_only = TRUE)
+
+change_matrix = lapply(2:length(aligned),function(i) {
+  aligned[[i-1]] - aligned[[i]]
+}) %>% do.call(cbind,.) %>% new("VectorSpaceModel",.)
+
+multi_set = aligned %>% do.call(cbind,.) %>% new("VectorSpaceModel",.)
+
+multi_set %>% nearest_to("arts")
+aligned[[4]] %>% nearest_to("arts")
+
+```
 
 ```{r}
 
