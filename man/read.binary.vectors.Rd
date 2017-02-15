@@ -32,4 +32,3 @@ A VectorSpaceModel object
 \description{
 Read binary word2vec format files
 }
-

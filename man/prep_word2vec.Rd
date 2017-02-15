@@ -40,4 +40,3 @@ This function is extraordinarily inefficient: in most real-world cases, you'll b
 much better off preparing the documents using python, perl, awk, or any other
 scripting language that can reasonable read things in line-by-line.
 }
-

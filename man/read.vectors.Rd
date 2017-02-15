@@ -26,4 +26,3 @@ An matrixlike object of class `VectorSpaceModel`
 \description{
 Read a VectorSpaceModel from a file exported from word2vec or a similar output format.
 }
-

@@ -26,4 +26,4 @@ Suggests:
     magrittr,
     testthat,
     ggplot2
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

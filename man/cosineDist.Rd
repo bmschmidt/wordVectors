@@ -22,4 +22,3 @@ Not an actual distance metric, but can be used in similar contexts.
 It is calculated as simply the inverse of cosine similarity,
 and falls in a fixed range of 0 (identical) to 2 (completely opposite in direction.)
 }
-

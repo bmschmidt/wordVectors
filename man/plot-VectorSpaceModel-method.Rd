@@ -29,4 +29,3 @@ is pca. On the full vocab, it's kind of a mess.
 
 This plots only the first 300 words in the model.
 }
-

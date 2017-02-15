@@ -23,4 +23,3 @@ such as the precompiled vectors distributed by Google
 at https://code.google.com/archive/p/word2vec/
 }
 \keyword{datasets}
-

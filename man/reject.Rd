@@ -31,4 +31,3 @@ genderless = reject(demo_vectors,demo_vectors[["he"]] - demo_vectors[["she"]])
 nearest_to(genderless,genderless[["man"]])
 
 }
-

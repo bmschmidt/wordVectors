@@ -20,4 +20,3 @@ Deprecated: use instead VSM[[c("word1","word2",...),average=FALSE]]
 \description{
 Reduce by rownames
 }
-

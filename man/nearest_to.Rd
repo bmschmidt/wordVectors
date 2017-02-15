@@ -61,4 +61,3 @@ nearest_to(demo_vectors,"good")
 nearest_to(demo_vectors,~ "guy" - "man" + "woman")
 
 }
-

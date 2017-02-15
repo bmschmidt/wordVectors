@@ -24,4 +24,3 @@ I believe this is necessary, but honestly am not sure.
 Keep the VSM class when doing subtraction operations;
 make it possible to subtract a single row from an entire model.
 }
-

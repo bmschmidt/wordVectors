@@ -15,4 +15,3 @@ An object of the same class as matrix
 \description{
 Normalize a matrix so that all rows are of unit length.
 }
-

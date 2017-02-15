@@ -24,4 +24,3 @@ A VectorSpaceModel
 \description{
 Reduce a VectorSpaceModel to a smaller one
 }
-

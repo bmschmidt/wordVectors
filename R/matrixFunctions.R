@@ -1,14 +1,23 @@
-#' Improve Vectorspace
+#' Improve a vectorspace by removing common elements.
 #'
 #'
 #' @param vectorspace A VectorSpacemodel to be improved.
 #' @param D The number of principal components to eliminate.
 #'
-#' @citation
+#' @description See reference for a full description. Supposedly, these operations will improve performance on analogy tasks.
+#'
+#' @references Jiaqi Mu, Suma Bhat, Pramod Viswanath. All-but-the-Top: Simple and Effective Postprocessing for Word Representations. https://arxiv.org/abs/1702.01417.
 #' @return A VectorSpaceModel object, transformed from the original.
 #' @export
 #'
 #' @examples
+#'
+#' nearest_to(demo_vectors,"great")
+#' # stopwords like "and" and "very" are no longer top ten.
+#' # I don't know if this is really better, though.
+#'
+#' nearest_to(improve_vectorspace(demo_vectors),"great")
+#'
 improve_vectorspace = function(vectorspace,D=round(ncol(vectorspace)/100)) {
   mean = new("VectorSpaceModel",
              matrix(apply(vectorspace,2,mean),
@@ -18,16 +27,15 @@ improve_vectorspace = function(vectorspace,D=round(ncol(vectorspace)/100)) {
   pca = prcomp(vectorspace)
 
   # I don't totally understand the recommended operation in the source paper, but this seems to do much
-  # the same thing uses the internal functions of the package to reject the top i dimensions one at a time.
+  # the same thing using the internal functions of the package to reject the top i dimensions one at a time.
   drop_top_i = function(vspace,i) {
     if (i<=0) {vspace} else if (i==1) {
-      vspace %>% reject(pca$rotation[,i])
-      }
-    else {
-      vspace %>% reject(pca$rotation[,i]) %>% drop_top_i(i-1)
+      reject(vspace,pca$rotation[,i])
+    } else {
+      drop_top_i(reject(vspace,pca$rotation[,i]), i-1)
     }
   }
-  better = vectorspace %>% drop_top_i(D)
+  better =  drop_top_i(vectorspace,D)
 }
 
 

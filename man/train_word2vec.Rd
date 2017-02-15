@@ -52,10 +52,9 @@ natural language processing and machine learning applications.
 model = word2vec(system.file("examples", "rfaq.txt", package = "tmcn.word2vec"))
 }
 }
-\author{
-Jian Li <\email{rweibo@sina.com}>, Ben Schmidt <\email{bmchmidt@gmail.com}>
-}
 \references{
 \url{https://code.google.com/p/word2vec/}
 }
-
+\author{
+Jian Li <\email{rweibo@sina.com}>, Ben Schmidt <\email{bmchmidt@gmail.com}>
+}
