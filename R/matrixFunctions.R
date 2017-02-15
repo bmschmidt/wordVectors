@@ -136,7 +136,7 @@ setMethod("[","VectorSpaceModel",function(x,i,j,...,drop) {
 #'
 setMethod("-",signature(e1="VectorSpaceModel",e2="VectorSpaceModel"),function(e1,e2) {
     if (nrow(e1)==nrow(e2) && ncol(e1)==ncol(e2)) {
-      return (methods::new("VectorSpaceModel",callNextMethod()))
+      return (methods::new("VectorSpaceModel",e1@.Data-e2@.Data))
     }
     if (nrow(e2)==1) {
       return(
@@ -188,7 +188,7 @@ setMethod("[[","VectorSpaceModel",function(x,i,average=TRUE) {
 setMethod("show","VectorSpaceModel",function(object) {
   dims = dim(object)
   cat("A VectorSpaceModel object of ",dims[1]," words and ", dims[2], " vectors\n")
-  methods::show(unclass(object[1:min(nrow(object),10),1:min(ncol(object),6)]))
+  methods::show(unclass(object[1:min(nrow(object),10),1:min(ncol(object),6),drop=F]))
 })
 
 #' Plot a Vector Space Model.
@@ -334,7 +334,7 @@ read.binary.vectors = function(filename,nrows=Inf,cols="All", rowname_list = NUL
 
 
   returned_columns = col_number
-  if (is.integer(cols)) {
+  if (is.numeric(cols)) {
     returned_columns = length(cols)
   }
 
@@ -352,7 +352,7 @@ read.binary.vectors = function(filename,nrows=Inf,cols="All", rowname_list = NUL
     }
     rownames[i] <<- rowname
     row = readBin(a,numeric(),size=4,n=col_number,endian="little")
-    if (is.integer(cols)) {
+    if (is.numeric(cols)) {
       return(row[cols])
     }
     return(row)
@@ -445,7 +445,12 @@ magnitudes <- function(matrix) {
 #' @return An object of the same class as matrix
 #' @export
 normalize_lengths = function(matrix) {
-  t(t(matrix)/magnitudes(matrix))
+
+  val = matrix/magnitudes(matrix)
+  if (inherits(val,"VectorSpaceModel")) {
+    val@.cache = new.env()
+  }
+  val
 }
 
 #' Reduce by rownames
