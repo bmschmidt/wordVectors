@@ -130,22 +130,21 @@ prep_word2vec <- function(origin,destination,
   }
 
   if (file.exists(destination)) file.remove(destination)
-  tokenize_words = function (x, lowercase = TRUE, simplify = FALSE) {
-    # This is an abbreviated version of the "tokenizers" package
-    if (lowercase)  x <- stri::stri_trans_tolower(x)
-    out <- stri::stri_split_boundaries(x, type = "word", skip_word_none = TRUE)
-    simplify_list <- function(x, simplify) {
-      stopifnot(is.logical(simplify))
-      if (simplify && length(x) == 1) x[[1]] else x
-    }
-    simplify_list(out, simplify)
+
+  tokenize_words = function (x, lowercase = TRUE) {
+    # This is an abbreviated version of the "tokenizers" package version to remove the dependency.
+    # Sorry, Lincoln, it was failing some tests.
+    if (lowercase) x <- stringi::stri_trans_tolower(x)
+    out <- stringi::stri_split_boundaries(x, type = "word", skip_word_none = TRUE)
+    unlist(out)
   }
+
   prep_single_file <- function(file_in, file_out, lowercase) {
     message("Prepping ", file_in)
 
     text <- file_in %>%
       readr::read_file() %>%
-      tokenizers::tokenize_words(simplify = TRUE, lowercase) %>%
+      tokenize_words(lowercase) %>%
       stringr::str_c(collapse = " ")
 
     stopifnot(length(text) == 1)
