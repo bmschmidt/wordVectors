@@ -23,8 +23,7 @@ Imports:
     utils,
     stats,
     readr, 
-    stringr,
-    tokenizers
+    stringr
 Suggests:
     stringi,
     tsne,
