@@ -6,7 +6,15 @@ inst/extdata/
 hum2vec.Rproj
 src/*.o
 src/*.so
-cookbooks cookbooks.txt cookbooks.vectors cookbooks.zip
+cookbooks
+cookbooks.txt
+cookbooks.vectors
+cookbooks.zip
 cookbooks*
 etc
 cookbook_vectors.bin
+tests/testthat/binary.bin
+tests/testthat/input.txt
+tests/testthat/tmp.txt
+tests/testthat/binary.bin
+tests/testthat/tmp.bin

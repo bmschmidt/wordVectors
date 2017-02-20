@@ -24,7 +24,9 @@
 ##' High values help reduce model size.
 ##' @param iter Number of passes to make over the corpus in training.
 ##' @param force Whether to overwrite existing model files.
-##' @return A word2vec object.
+##' @param negative_samples Number of negative samples to take in skip-gram training. 0 means full sampling, while lower numbers
+##' give faster training. For large corpora 2-5 may work; for smaller corpora, 5-15 is reasonable.
+##' @return A VectorSpaceModel object.
 ##' @author Jian Li <\email{rweibo@@sina.com}>, Ben Schmidt <\email{bmchmidt@@gmail.com}>
 ##' @references \url{https://code.google.com/p/word2vec/}
 ##' @export
@@ -32,10 +34,10 @@
 ##' @useDynLib wordVectors
 ##'
 ##' @examples \dontrun{
-##' model = word2vec(system.file("examples", "rfaq.txt", package = "tmcn.word2vec"))
+##' model = train_word2vec(system.file("examples", "rfaq.txt", package = "wordVectors"))
 ##' }
 train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,threads=1,window=12,
-                           classes=0,cbow=0,min_count=5,iter=5,force=F)
+                           classes=0,cbow=0,min_count=5,iter=5,force=F, negative_samples=5)
 {
   if (!file.exists(train_file)) stop("Can't find the training file!")
   if (file.exists(output_file) && !force) stop("The output file '",
@@ -69,7 +71,8 @@ train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,t
             classes=as.character(classes),
             cbow=as.character(cbow),
             min_count=as.character(min_count),
-            iter=as.character(iter)
+            iter=as.character(iter),
+            neg_samples=as.character(negative_samples)
   )
 
   read.vectors(output_file)
@@ -110,6 +113,8 @@ prep_word2vec <- function(origin,destination,
   # strsplit chokes on large lines. I would not have gone down this path if I knew this
   # to begin with.
 
+
+
   message("Beginning tokenization to text file at ", destination)
   if (!exists("dir.exists")) {
     # Use the version from devtools if in R < 3.2.0
@@ -123,6 +128,8 @@ prep_word2vec <- function(origin,destination,
   if (dir.exists(origin)) {
     origin = list.files(origin,recursive=T,full.names = T)
   }
+
+  if (file.exists(destination)) file.remove(destination)
 
   prep_single_file <- function(file_in, file_out, lowercase) {
     message("Prepping ", file_in)
@@ -138,7 +145,7 @@ prep_word2vec <- function(origin,destination,
   }
 
 
-  Map(prep_single_file, origin)
+  Map(prep_single_file, origin, lowercase=lowercase, file_out=destination)
 
   # Save the ultimate output
   real_destination_name = destination
