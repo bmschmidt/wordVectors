@@ -710,7 +710,7 @@ distend = function(matrix,vector, multiplier) {
 #'
 #' As with cosineSimilarity, the second argument can take several forms. If it's a vector or
 #' matrix slice, it will be taken literally. If it's a character string, it will
-#' be interepreted as a word and the associated vector from `matrix` will be used. If
+#' be interpreted as a word and the associated vector from `matrix` will be used. If
 #' a formula, any strings in the formula will be converted to rows in the associated `matrix`
 #' before any math happens.
 #'
