@@ -17,13 +17,17 @@ Depends:
     R (>= 2.14.0)
 LazyData: TRUE
 Imports:
+    magrittr,
     graphics,
     methods,
-    utils
+    utils,
+    stats,
+    readr, 
+    stringr,
+    tokenizers
 Suggests:
     stringi,
     tsne,
-    magrittr,
     testthat,
     ggplot2
 RoxygenNote: 6.0.1

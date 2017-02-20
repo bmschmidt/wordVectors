@@ -105,25 +105,10 @@ train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,t
 #' @return The file name (silently).
 prep_word2vec <- function(origin,destination,
                           split_characters="\\W",lowercase=F,
-                          bundle_ngrams=1,...)
+                          bundle_ngrams=1, ...)
 {
   # strsplit chokes on large lines. I would not have gone down this path if I knew this
   # to begin with.
-  non_choking_strsplit <- function(lines,...) {
-    splitLineIfNecessary = function(line,limit=10000) {
-      # recursive function.
-      chars = nchar(line)
-      if (chars < limit) {
-        return(line)
-      } else {
-        first_half = substr(line,1,nchar(line) %/% 2)
-        second_half = substr(line,1,nchar(line) %/% 2)
-        return(c(splitLineIfNecessary(first_half),splitLineIfNecessary(second_half)))
-      }
-    }
-    lines = unlist(lapply(lines,splitLineIfNecessary))
-    unlist(strsplit(lines,...))
-  }
 
   message("Beginning tokenization to text file at ", destination)
   if (!exists("dir.exists")) {
@@ -134,35 +119,26 @@ prep_word2vec <- function(origin,destination,
       stats::setNames(res, x)
     }
   }
+
   if (dir.exists(origin)) {
     origin = list.files(origin,recursive=T,full.names = T)
   }
-  cat("",file=destination,append=F)
 
+  prep_single_file <- function(file_in, file_out, lowercase) {
+    message("Prepping ", file_in)
 
-  if (require(stringi)) {
-    using_stringi = TRUE
-  } else {
-    warning("Install the stringi package ('install.packages(\"stringi\")') for much more efficient word tokenization")
+    text <- file_in %>%
+      readr::read_file() %>%
+      tokenizers::tokenize_words(simplify = TRUE, lowercase) %>%
+      stringr::str_c(collapse = " ")
+
+    stopifnot(length(text) == 1)
+    readr::write_lines(text, file_out, append = TRUE)
+    return(TRUE)
   }
-  for (filename in origin) {
-    message("\n",filename,appendLF=F)
-    con = file(filename,open="r")
-    while(length(lines <- readLines(con, n = 1000, warn = FALSE))>0) {
-      message(".",appendLF=F)
-      if(using_stringi) {
-        words = unlist(stringi::stri_extract_all_words(lines))
-      } else {
-        words = non_choking_strsplit(lines,split_characters,perl=T)
-      }
-      if (lowercase) {words=tolower(words)}
-      cat(c(words," "),file=destination,append=T)
-    }
 
-    close(con)
-    cat(c("\n"),file=destination,append=T)
 
-  }
+  Map(prep_single_file, origin)
 
   # Save the ultimate output
   real_destination_name = destination
