@@ -1,11 +1,7 @@
 language: r
 cache: packages
 warnings_are_errors: true
-
-env:
-  global:
-    - R_CHECK_ARGS="--no-build-vignettes --no-manual"
-
+r_build_args: --no-build-vignettes --no-manual --no-resave-data
 r:
   - release
   - devel
