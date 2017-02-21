@@ -91,10 +91,6 @@ train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,t
 #' @param origin A text file or a directory of text files
 #'  to be used in training the model
 #' @param destination The location for output text.
-#' @param split_characters If the 'stringi' package is not installed,
-#' A list of characters that mark word breaks. By default,
-#' any nonword characters according to the perl regex engine. If stringi is installed,
-#' this parameter is ignored.
 #' @param lowercase Logical. Should uppercase characters be converted to lower?
 #' @param bundle_ngrams Integer. Statistically significant phrases of up to this many words
 #' will be joined with underscores: e.g., "United States" will usually be changed to "United_States"
@@ -106,8 +102,7 @@ train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,t
 #' @export
 #'
 #' @return The file name (silently).
-prep_word2vec <- function(origin,destination,
-                          split_characters="\\W",lowercase=F,
+prep_word2vec <- function(origin,destination,lowercase=F,
                           bundle_ngrams=1, ...)
 {
   # strsplit chokes on large lines. I would not have gone down this path if I knew this
