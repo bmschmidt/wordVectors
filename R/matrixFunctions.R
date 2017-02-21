@@ -1,16 +1,25 @@
-#' Improve Vectorspace
+#' Improve a vectorspace by removing common elements.
 #'
 #'
 #' @param vectorspace A VectorSpacemodel to be improved.
 #' @param D The number of principal components to eliminate.
 #'
-#' @citation
+#' @description See reference for a full description. Supposedly, these operations will improve performance on analogy tasks.
+#'
+#' @references Jiaqi Mu, Suma Bhat, Pramod Viswanath. All-but-the-Top: Simple and Effective Postprocessing for Word Representations. https://arxiv.org/abs/1702.01417.
 #' @return A VectorSpaceModel object, transformed from the original.
 #' @export
 #'
 #' @examples
+#'
+#' nearest_to(demo_vectors,"great")
+#' # stopwords like "and" and "very" are no longer top ten.
+#' # I don't know if this is really better, though.
+#'
+#' nearest_to(improve_vectorspace(demo_vectors),"great")
+#'
 improve_vectorspace = function(vectorspace,D=round(ncol(vectorspace)/100)) {
-  mean = new("VectorSpaceModel",
+  mean = methods::new("VectorSpaceModel",
              matrix(apply(vectorspace,2,mean),
                     ncol=ncol(vectorspace))
   )
@@ -28,6 +37,7 @@ improve_vectorspace = function(vectorspace,D=round(ncol(vectorspace)/100)) {
     }
   }
   better = vectorspace %>% drop_top_i(D)
+  pca = stats::prcomp(vectorspace)
 }
 
 
@@ -92,13 +102,11 @@ sub_out_formula = function(formula,context) {
 #' @return An object of class "VectorSpaceModel"
 #' @exportClass VectorSpaceModel
 setClass("VectorSpaceModel",slots = c(".cache"="environment"),contains="matrix")
-#setClass("NormalizedVectorSpaceModel",contains="VectorSpaceModel")
-
 # This is Steve Lianoglu's method for associating a cache with an object
 # http://r.789695.n4.nabble.com/Change-value-of-a-slot-of-an-S4-object-within-a-method-td2338484.html
 setMethod("initialize", "VectorSpaceModel",
           function(.Object, ..., .cache=new.env()) {
-            callNextMethod(.Object, .cache=.cache, ...)
+            methods::callNextMethod(.Object, .cache=.cache, ...)
           })
 
 #' Square Magnitudes with caching
@@ -110,7 +118,7 @@ setMethod("initialize", "VectorSpaceModel",
 #' @keywords internal
 square_magnitudes = function(object) {
   if (class(object)=="VectorSpaceModel") {
-      if (.hasSlot(object, ".cache")) {
+      if (methods::.hasSlot(object, ".cache")) {
       if (is.null(object@.cache$magnitudes)) {
         object@.cache$magnitudes = rowSums(object^2)
       }
@@ -139,7 +147,7 @@ square_magnitudes = function(object) {
 #' @return A VectorSpaceModel
 #'
 setMethod("[","VectorSpaceModel",function(x,i,j,...,drop) {
-  nextup = callNextMethod()
+  nextup = methods::callNextMethod()
   if (!is.matrix(nextup)) {
     # A verbose way of effectively changing drop from TRUE to FALSE;
     # I don't want one-dimensional matrices turned to vectors.
@@ -150,7 +158,7 @@ setMethod("[","VectorSpaceModel",function(x,i,j,...,drop) {
       nextup = matrix(nextup,ncol=j)
     }
   }
-  new("VectorSpaceModel",nextup)
+  methods::new("VectorSpaceModel",nextup)
 })
 
 #' VectorSpaceModel subtraction
@@ -174,7 +182,7 @@ setMethod("-",signature(e1="VectorSpaceModel",e2="VectorSpaceModel"),function(e1
     }
     if (nrow(e2)==1) {
       return(
-        new("VectorSpaceModel",e1 - matrix(rep(e2,each=nrow(e1)),nrow=nrow(e1)))
+        methods::new("VectorSpaceModel",e1 - matrix(rep(e2,each=nrow(e1)),nrow=nrow(e1)))
         )
     }
     stop("Vector space model subtraction must use models of equal dimensions")
@@ -251,14 +259,14 @@ setMethod("plot","VectorSpaceModel",function(x,method="tsne",...) {
     x = as.matrix(x)
     short = x[1:min(300,nrow(x)),]
     m = tsne::tsne(short,...)
-    plot(m,type='n',main="A two dimensional reduction of the vector space model using t-SNE")
+    graphics::plot(m,type='n',main="A two dimensional reduction of the vector space model using t-SNE")
     graphics::text(m,rownames(short),cex = ((400:1)/200)^(1/3))
     rownames(m)=rownames(short)
     silent = m
   } else if (method=="pca") {
-    vectors = predict(prcomp(x))[,1:2]
-    plot(vectors,type='n')
-    text(vectors,labels=rownames(vectors))
+    vectors = stats::predict(stats::prcomp(x))[,1:2]
+    graphics::plot(vectors,type='n')
+    graphics::text(vectors,labels=rownames(vectors))
   }
 })
 
@@ -611,7 +619,7 @@ project = function(matrix,vector) {
     stop("The vector must be the same length as the matrix it is being compared to")
   }
   newmat = crossprod(t(matrix %*% b)/as.vector((b %*% b)) , b)
-  return(new("VectorSpaceModel",newmat))
+  return(methods::new("VectorSpaceModel",newmat))
   }
 
 #' Return a vector rejection for each element in a VectorSpaceModel
@@ -675,7 +683,7 @@ reject = function(matrix,vector) {
 #' @export
 distend = function(matrix,vector, multiplier) {
   parallel_track = project(matrix,vector)
-  return(new("VectorSpaceModel",matrix - parallel_track*(multiplier-1)))
+  return(methods::new("VectorSpaceModel",matrix - parallel_track*(multiplier-1)))
 }
 
 #' Return the n closest words in a VectorSpaceModel to a given vector.
@@ -702,7 +710,7 @@ distend = function(matrix,vector, multiplier) {
 #'
 #' As with cosineSimilarity, the second argument can take several forms. If it's a vector or
 #' matrix slice, it will be taken literally. If it's a character string, it will
-#' be interepreted as a word and the associated vector from `matrix` will be used. If
+#' be interpreted as a word and the associated vector from `matrix` will be used. If
 #' a formula, any strings in the formula will be converted to rows in the associated `matrix`
 #' before any math happens.
 #'

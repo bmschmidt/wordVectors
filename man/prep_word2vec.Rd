@@ -4,19 +4,13 @@
 \alias{prep_word2vec}
 \title{Prepare documents for word2Vec}
 \usage{
-prep_word2vec(origin, destination, split_characters = "\\\\W",
-  lowercase = F, bundle_ngrams = 1, ...)
+prep_word2vec(origin, destination, lowercase = F, bundle_ngrams = 1, ...)
 }
 \arguments{
 \item{origin}{A text file or a directory of text files
 to be used in training the model}
 
 \item{destination}{The location for output text.}
-
-\item{split_characters}{If the 'stringi' package is not installed,
-A list of characters that mark word breaks. By default,
-any nonword characters according to the perl regex engine. If stringi is installed,
-this parameter is ignored.}
 
 \item{lowercase}{Logical. Should uppercase characters be converted to lower?}
 

@@ -2,7 +2,6 @@ Package: wordVectors
 Type: Package
 Title: Tools for creating and analyzing vector-space models of texts
 Version: 2.0
-Date: 2016-01-23
 Author: Ben Schmidt, Jian Li
 Maintainer: Ben Schmidt <bmschmidt@gmail.com>
 Description:
@@ -13,17 +12,22 @@ Description:
 	syntax for working with models and performing vector arithmetic that make it
 	easier to perform useful operations in a word-vector space.
 License: Apache License (== 2.0)
+URL: http://github.com/bmschmidt/wordVectors
+BugReports: https://github.com/bmschmidt/wordVectors/issues
 Depends:
     R (>= 2.14.0)
 LazyData: TRUE
 Imports:
+    magrittr,
     graphics,
     methods,
-    utils
+    utils,
+    stats,
+    readr, 
+    stringr
 Suggests:
     stringi,
     tsne,
-    magrittr,
     testthat,
     ggplot2
 RoxygenNote: 6.0.1

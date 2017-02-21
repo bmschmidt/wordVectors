@@ -2,7 +2,7 @@
 % Please edit documentation in R/matrixFunctions.R
 \name{improve_vectorspace}
 \alias{improve_vectorspace}
-\title{Improve Vectorspace}
+\title{Improve a vectorspace by removing common elements.}
 \usage{
 improve_vectorspace(vectorspace, D = round(ncol(vectorspace)/100))
 }
@@ -15,5 +15,17 @@ improve_vectorspace(vectorspace, D = round(ncol(vectorspace)/100))
 A VectorSpaceModel object, transformed from the original.
 }
 \description{
-Improve Vectorspace
+See reference for a full description. Supposedly, these operations will improve performance on analogy tasks.
+}
+\examples{
+
+nearest_to(demo_vectors,"great")
+# stopwords like "and" and "very" are no longer top ten.
+# I don't know if this is really better, though.
+
+nearest_to(improve_vectorspace(demo_vectors),"great")
+
+}
+\references{
+Jiaqi Mu, Suma Bhat, Pramod Viswanath. All-but-the-Top: Simple and Effective Postprocessing for Word Representations. https://arxiv.org/abs/1702.01417.
 }

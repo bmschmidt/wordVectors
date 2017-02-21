@@ -12,3 +12,8 @@ stanford_plot(model_set, word, n = 20, transform_type = c("mds", "pca"))
 \description{
 Plot models
 }
+\examples{
+
+
+
+}
