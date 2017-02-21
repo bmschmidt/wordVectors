@@ -1,5 +1,3 @@
-
-
 #' Extract a shared vector from a list of vectors.
 #'
 #' @param matrix

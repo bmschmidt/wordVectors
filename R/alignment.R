@@ -15,7 +15,6 @@
 #' @param y The matrix or VectorSpaceModel to be rotated.
 #'
 #' @return A matrix of the same shape as y, projected into the space of x.
-#' @export
 #'
 #' @examples
 #'
@@ -63,6 +62,9 @@ procrustes = function(x, y) {
 #' @export
 #'
 #' @examples
+#'
+#'
+#'
 stanford_plot = function(model_set, word, n=20, transform_type = c("mds","pca")) {
 
   if (!require(ggplot2)) {stop("You need ggplot for this function: run 'install.packages(ggplot2)'")}
