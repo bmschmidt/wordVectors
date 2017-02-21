@@ -24,10 +24,12 @@ Imports:
     utils,
     stats,
     readr, 
-    stringr
+    stringr,
+    stringi
 Suggests:
-    stringi,
     tsne,
     testthat,
-    ggplot2
+    ggplot2,
+    knitr
 RoxygenNote: 6.0.1
+VignetteBuilder: knitr

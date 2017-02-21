@@ -122,7 +122,7 @@ to femininity. You can then add this vector to "guy", and that will take you to 
 only the grouping is different.
 
 ```{r}
-demo_vectors %>% nearest_to("guy" + ("she" - "he"))
+demo_vectors %>% nearest_to(~ "guy" + ("she" - "he"))
 ```
 
 Principal components can let you plot a subset of these vectors to see how they relate. You can imagine an arrow from "he" to "she", from "guy" to "lady", and from "man" to "woman"; all run in roughly the same direction.
@@ -159,7 +159,8 @@ library(dplyr)
 
 top_evaluative_words %>%
   inner_join(goodness) %>%
-  inner_join(femininity) %>% ggplot() + 
+  inner_join(femininity) %>%
+  ggplot() + 
   geom_text(aes(x=`similarity to "she" - "he"`,
                 y=`similarity to "good" - "bad"`,
                 label=word))

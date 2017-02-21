@@ -18,3 +18,5 @@ tests/testthat/input.txt
 tests/testthat/tmp.txt
 tests/testthat/binary.bin
 tests/testthat/tmp.bin
+vignettes/*.R
+vignettes/*.html
