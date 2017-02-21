@@ -59,13 +59,14 @@ You can also do this in another language: particularly for large files, that wil
 
 
 ```{r}
-prep_word2vec(origin="cookbooks",destination="cookbooks.txt",lowercase=T,bundle_ngrams=2)
+if (!file.exists("cookbooks.txt")) prep_word2vec(origin="cookbooks",destination="cookbooks.txt",lowercase=T,bundle_ngrams=2)
 ```
 
 To train a word2vec model, use the function `train_word2vec`. This actually builds up the model. It uses an on-disk file as an intermediary and then reads that file into memory.
 
 ```{r}
-model = train_word2vec("cookbooks.txt","cookbook_vectors.bin",vectors=200,threads=4,window=12,iter=5,negative_samples=0)
+if (!file.exists("cookbook_vectors.bin")) {model = train_word2vec("cookbooks.txt","cookbook_vectors.bin",vectors=200,threads=4,window=12,iter=5,negative_samples=0)} else model = read.vectors("cookbook_vectors.bin")
+
 ```
 
 A few notes:

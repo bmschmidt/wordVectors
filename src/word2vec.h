@@ -280,9 +280,9 @@ void LearnVocabFromTrainFile() {
     ReadWord(word, fin);
     if (feof(fin)) break;
     train_words++;
-    if ((debug_mode > 1) && (train_words % 100000 == 0)) {
-      Rprintf("%lldK%c", train_words / 1000, 13);
-      fflush(NULL);
+        if ((debug_mode > 1) && (train_words % 100000 == 0)) {
+          Rprintf("%lldK%c", train_words / 1000, 13);
+          fflush(NULL);
     }
     i = SearchVocab(word);
     if (i == -1) {
@@ -388,6 +388,8 @@ void *TrainModelThread(void *id) {
   long long word_count = 0, last_word_count = 0, sen[MAX_SENTENCE_LENGTH + 1];
   long long l1, l2, c, target, label, local_iter = iter;
   unsigned long long next_random = (long long)id;
+  //  real doneness_f, speed_f;
+  // For writing to R.
   real f, g;
   clock_t now;
   real *neu1 = (real *)calloc(layer1_size, sizeof(real));
@@ -397,14 +399,17 @@ void *TrainModelThread(void *id) {
   while (1) {
     if (word_count - last_word_count > 10000) {
       word_count_actual += word_count - last_word_count;
-      last_word_count = word_count;
-      if ((debug_mode > 1)) {
-        now=clock();
-        Rprintf("%cAlpha: %f  Progress: %.2f%%  Words/thread/sec: %.2fk  ", 13, alpha,
-         word_count_actual / (real)(iter * train_words + 1) * 100,
-         word_count_actual / ((real)(now - start + 1) / (real)CLOCKS_PER_SEC * 1000));
-        fflush(NULL);
-      }
+      last_word_count = word_count;      
+      /* if ((debug_mode > 1)) { */
+      /*   now=clock(); */
+      /* 	doneness_f = word_count_actual / (real)(iter * train_words + 1) * 100; */
+      /* 	speed_f = word_count_actual / ((real)(now - start + 1) / (real)CLOCKS_PER_SEC * 1000); */
+	  
+      /*   Rprintf("%cAlpha: %f  Progress: %.2f%%  Words/thread/sec: %.2fk  ", 13, alpha, */
+      /* 		doneness_f, speed_f); */
+
+      /*   fflush(NULL); */
+      /* } */
       alpha = starting_alpha * (1 - word_count_actual / (real)(iter * train_words + 1));
       if (alpha < starting_alpha * 0.0001) alpha = starting_alpha * 0.0001;
     }

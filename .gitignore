@@ -20,3 +20,4 @@ tests/testthat/binary.bin
 tests/testthat/tmp.bin
 vignettes/*.R
 vignettes/*.html
+vignettes/*_files
