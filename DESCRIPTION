@@ -30,6 +30,9 @@ Suggests:
     tsne,
     testthat,
     ggplot2,
-    knitr
+    knitr,
+    dplyr,
+    rmarkdown,
+    devtools
 RoxygenNote: 6.0.1
 VignetteBuilder: knitr
