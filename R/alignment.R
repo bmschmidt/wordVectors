@@ -34,7 +34,7 @@ procrustes = function(x, y) {
 
   reorder_rows = function(matrix,lookup=shared_vocab) matrix[match(lookup,rownames(matrix)),]
 
-  # A few extra copies for shorter code.
+  # A few extra copies produces shorter code.
   shared_vocab = intersect(rownames(x),rownames(y))
   x_ = reorder_rows(x,shared_vocab)
   y_ = reorder_rows(y,shared_vocab)
@@ -51,23 +51,40 @@ procrustes = function(x, y) {
 }
 
 
-#' Plot models
-#'
-#' @param model_set
-#' @param word
-#' @param n
-#' @param transform_type
-#'
-#' @return
-#' @export
-#'
-#' @examples
-#'
-#'
-#'
+# This is a rather complicated function to make a slopegraph: I may bundle it into the core package at some point.
+usage_slopegraph = function(vector, ..., n=10, label_function = function(...) ggrepel::geom_text_repel(..., direction="y")) {
+  sets = list(...)
+  names = eval(substitute(alist(...))) %>% purrr::map(deparse) %>% unlist
+  names(sets) = paste("set", 1:length(sets))
+  groups = lapply(1:length(sets), function(name) {
+    set = sets[[name]]
+    neighbors = nearest_to(set,vector,fancy_names=F,n=Inf)
+    neighbors$rank = rank(-neighbors$similarity)
+    names(neighbors) = c("word",name,paste0("rank-",name))
+    neighbors %>% as.tbl
+  }) %>% purrr::reduce(inner_join)
+
+  in_top_n = groups %>% select(starts_with("rank-")) %>% apply(1,min) <= n
+  groups = groups %>% mutate(lab1 = paste0(`rank-1`, ". ", word))
+  groups = groups %>% mutate(lab2 = paste0(`rank-2`, ". ", word))
+
+  #label_function = geom_text
+  #if (requireNamespace("ggrepel")) label_function = function(...) ggrepel::geom_text_repel(..., direction="y")
+  groups[in_top_n,] %>% filter(`1`< .999 & `2` < .999) %>% ggplot() +
+    label_function(aes(y=`1`,label = lab1),hjust=1,x=1,alpha=.5,nudge_x=-.1) +
+    label_function(aes(y=`2`,label = lab2),hjust=0,x=2,alpha=.5,nudge_x=.1) +
+    geom_segment(aes(x=1,xend=2,y=`1`, yend=`2`)) +
+    scale_x_continuous(limits=c(0,3)) +
+    scale_y_continuous(paste0("Cosine similarity to ",deparse(vector)))+
+    theme_bw() +
+    labs (title=paste0("Similarity to '", deparse(vector),"' in the\nvectorspaces ", names[1], " (left) and\n", names[2], " (right)"))
+}
+
+
+
 stanford_plot = function(model_set, word, n=20, transform_type = c("mds","pca")) {
 
-  if (!require(ggplot2)) {stop("You need ggplot for this function: run 'install.packages(ggplot2)'")}
+  if (!requireNamespace("ggplot2")) {stop("You need ggplot for this function: run 'install.packages(ggplot2)'")}
   model_set = Filter(function(model) {length(intersect(word,rownames(model))) > 0}, model_set)
   small_list = lapply(model_set, function(model) {
     model %>% nearest_to(model[[word]],n,fancy_names=F)

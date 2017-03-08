@@ -24,7 +24,7 @@ improve_vectorspace = function(vectorspace,D=round(ncol(vectorspace)/100)) {
                     ncol=ncol(vectorspace))
   )
   vectorspace = vectorspace-mean
-  pca = prcomp(vectorspace)
+  pca = prcomp(vectorspace@.Data)
 
   # I don't totally understand the recommended operation in the source paper, but this seems to do much
   # the same thing uses the internal functions of the package to reject the top i dimensions one at a time.
@@ -37,7 +37,6 @@ improve_vectorspace = function(vectorspace,D=round(ncol(vectorspace)/100)) {
     }
   }
   better = vectorspace %>% drop_top_i(D)
-  pca = stats::prcomp(vectorspace)
 }
 
 

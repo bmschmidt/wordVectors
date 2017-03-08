@@ -164,7 +164,6 @@ prep_word2vec <- function(origin,destination,lowercase=F,
     }
     file.rename(destination,real_destination_name)
   }
-
   silent = real_destination_name
 }
 

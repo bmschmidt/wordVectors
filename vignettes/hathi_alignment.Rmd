@@ -3,50 +3,125 @@ title: "In-workshop materials"
 output: html_document
 ---
 
-
 ## Introduction
 
 ```{r}
 knitr::opts_chunk$set(eval=FALSE)
 ```
 
+You need to download these files: they are big!
 
 ```{r}
 library(wordVectors)
-library(magrittr)
-```
+library(dplyr)
 
-
-## Alignment
-
-Alignment of multiple models presents fascinating, if poorly understood, opportunities.
-
-```{r setup}
-#library(wordVectors)
-library(magrittr)
-library(tidyverse)
-
-
-# If you downloaded these files, they're in a different folder.
-
-model_names = list.files("~/Dropbox/hathi_word2vec/",full.names = T) %>% Filter(function(x) {grepl("(All).*.bin",x)},.)
-models = read_group(model_names,nrow=50000)
-
-
-models[[4]] %>% nearest_to(models[[4]][["Dakota"]])
+if (!dir.exists("~/vector_space_models")) dir.create("~/vector_space_models")
 
 ```
 
-Align the models
+
+## Reading a list of files.
+
+First, we want to read a *list* of files together. The "read_group" function in the package does this for us.
+
+```{r}
+
+model_names = list.files("~/vector_space_models/",full.names = T) %>% Filter(function(x) {grepl("(All_).*.bin",x)},.)
+models = read_group(model_names,nrow=100000)
+
+```
+
+
+This new object is a named list; it can be accessed by index or by name. Some of the functions below use the names of the list, so it's worth getting them right.
+
+```{r}
+names(models)
+with(models, `All_1923-1945` %>% nearest_to("Dakota"))
+```
+
+We can compare similarities between these models without aligning them by just looking at most-common words. The function `usage_slopegraph` can do this automatically; you can see, for example, a dramatic shift in the proximity to "Germany" of "Poland" and away from "Switzerland" in English-language texts.
+
+
+```{r}
+```
 
 ``` {r}
-
-aligned = align_models(models,shared_vocab_only = FALSE)
-
-stanford_plot(aligned, word = c("broadcast"), 15, transform_type = "mds")
+plot = with(models, usage_slopegraph("Germany", `All_1923-1945`, `All_1945-1968`))
+plot$data$lab1 = paste(plot$data$lab1,"      ")
+plot
 ```
 
 ```{r}
+plot + 
+  geom_text(
+    data = data.frame(label=oldlab1,y=struct[[1]][[1]]$y),
+    x= 1-.1,
+    aes(y=y,label=label),
+    hjust=1
+    )
+
+struct 
+
+struct[6,]
+struct[[2]]
+foo
+
+foo[[1]]$labels
+
+
+foo[[1]]
+foo[[1]][[1]]$hjust=0
+foo[[1]][[2]]$hjust=1
+
+names()
+layer_grob(foo[[3]])
+foo$plot
+foo
+```
+
+Or take "immigration", which over this same horizon moves into the neighbor of "refugees" and away from talk of "aliens."
+
+``` {r}
+with(models, usage_slopegraph("immigration", `All_1923-1945`, `All_1945-1968`))
+```
+
+These lists of words don't capture the underlying directions of movement, however. Suppose we want to ask "what words are similar to the vector along which Germany shifts?" 
+One way to do these and other operations is to *align* models using a method called orthogonal procrustes: as used on word2vec, this was first described by Hamilton, Jurafsky, and Lescovic.
+
+The function `align_models` does that for us here.
+
+```{r}
+aligned = align_models(models,shared_vocab_only = FALSE)
+```
+
+```{r}
+changes_around_the_war = with(aligned,`All_1945-1968` - `All_1923-1945`)
+
+changes_around_the_war %>% nearest_to(~-"science")
+
+german_change = with(aligned, `All_1945-1968`[["Germany"]] - `All_1923-1945`[["Germany"]])
+
+aligned[["All_1923-1945"]] %>% nearest_to(german_change)
+
+```
+
+stanford_plot(aligned, word = c("freedom","liberty"), 15, transform_type = "pca")
+```
+
+```{r}
+
+last = aligned[[6]]
+
+last %>% nearest_to(~ "freedom" - "liberty", 30)
+
+usage_slopegraph
+
+last %>% nearest_to(~ -("freedom" - "liberty"), 50)
+```
+
+```{r}
+
+
 stanford_plot(aligned, word = c("political"), 15, transform_type = "mds")
 ```
 
@@ -94,8 +169,11 @@ change_matrix = lapply(2:length(aligned),function(i) {
 
 multi_set = aligned %>% do.call(cbind,.) %>% new("VectorSpaceModel",.)
 
-multi_set %>% nearest_to("arts")
-aligned[[4]] %>% nearest_to("arts")
+new("VectorSpaceModel",multi_set[,400:500]) %>% nearest_to("freedom")
+
+
+
+aligned[[6]] %>% nearest_to("freedom")
 
 ```
 

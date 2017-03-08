@@ -80,6 +80,14 @@ A few notes:
 
 Now we have a model in memory, trained on about 10 million words from 77 cookbooks. What can it tell us about food?
 
+## Inspection
+
+First, let's inspect it to see how it looks.
+
+```{r}
+model
+```
+
 ## Similarity searches
 
 Well, you can run some basic operations to find the nearest elements:
