@@ -9,8 +9,8 @@ An R package for building and exploring word embedding models.
 This package does three major things to make it easier to work with word2vec and other vectorspace models of language.
 
 1. [Trains word2vec models](#creating-text-vectors) using an extended Jian Li's word2vec code; reads and writes the binary word2vec format so that you can import pre-trained models such as Google's; and provides tools for reading only *part* of a model (rows or columns) so you can explore a model in memory-limited situations.
-2. [Creates a new `VectorSpaceModel` class in R that gives a better syntax for exploring a word2vec or GloVe model than native matrix methods.](#vectorspacemodel-object) For example, instead of writing `model[rownames(model)=="king",]`, you can write `model[["king"]]`, and instead of writing `vectors %>% nearest_to(vectors[rownames(vectors)=="king",] - vectors[rownames(vectors)=="man",] + vectors[rownames(vectors)=="woman",])` (whew!), you can write
-`vectors %>% nearest_to(~"king" - "man" + "woman")`.
+2. [Creates a new `VectorSpaceModel` class in R that gives a better syntax for exploring a word2vec or GloVe model than native matrix methods.](#vectorspacemodel-object) For example, instead of writing `model[rownames(model)=="king",]`, you can write `model[["king"]]`, and instead of writing `vectors %>% closest_to(vectors[rownames(vectors)=="king",] - vectors[rownames(vectors)=="man",] + vectors[rownames(vectors)=="woman",])` (whew!), you can write
+`vectors %>% closest_to(~"king" - "man" + "woman")`.
 3. [Implements several basic matrix operations that are useful in exploring word embedding models including cosine similarity, nearest neighbor, and vector projection](#useful-matrix-operations) with some caching that makes them much faster than the simplest implementations.
 
 ### Quick start
@@ -85,7 +85,7 @@ Each takes a `VectorSpaceModel` as its first argument. Sometimes, it's appropria
 
   * `cosineSimilarity(VSM_1,VSM_2)` calculates the cosine similarity of every vector in on vector space model to every vector in another. This is `n^2` complexity. With a vocabulary size of 20,000 or so, it can be reasonable to compare an entire set to itself; or you can compare a larger set to a smaller one to search for particular terms of interest. 
   * `cosineDistance(VSM_1,VSM_2)` is the inverse of cosineSimilarity. It's not really a distance metric, but can be used as one for clustering and the like.
-  * `nearest_to(VSM,vector,n)` wraps a particularly common use case for `cosineSimilarity`, of finding the top `n` terms in a `VectorSpaceModel` closest to term m
+  * `closest_to(VSM,vector,n)` wraps a particularly common use case for `cosineSimilarity`, of finding the top `n` terms in a `VectorSpaceModel` closest to term m
   * `project(VSM,vector)` takes a `VectorSpaceModel` and returns the portion parallel to the vector `vector`. 
   * `reject(VSM,vector)` is the inverse of `project`; it takes a `VectorSpaceModel` and returns the portion orthogonal to the vector `vector`. This makes it possible, for example, to collapse a vector space by removing certain distinctions of meaning.
   * `magnitudes` calculated the magnitude of each element in a VSM. This is useful in many operations.
@@ -98,7 +98,7 @@ not_that_kind_of_bank = chronam_vectors[["bank"]] %>%
       reject(chronam_vectors[["cashier"]]) %>% 
       reject(chronam_vectors[["depositors"]]) %>%   
       reject(chronam_vectors[["check"]])
-chronam_vectors %>% nearest_to(not_that_kind_of_bank)
+chronam_vectors %>% closest_to(not_that_kind_of_bank)
 ```
 
 These functions also allow an additional layer of syntactic sugar when working with word vectors. 
@@ -106,7 +106,7 @@ These functions also allow an additional layer of syntactic sugar when working w
 Or even just as a formula, if you're working entirely with a single model, so you don't have to keep referring to words; instead, you can use a formula interface to reduce typing and increase clarity.
 
 ```{r}
-vectors %>% nearest_to(~ "king" - "man" + "woman")
+vectors %>% closest_to(~ "king" - "man" + "woman")
 ```
 
 

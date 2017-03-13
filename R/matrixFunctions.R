@@ -12,11 +12,11 @@
 #'
 #' @examples
 #'
-#' nearest_to(demo_vectors,"great")
+#' closest_to(demo_vectors,"great")
 #' # stopwords like "and" and "very" are no longer top ten.
 #' # I don't know if this is really better, though.
 #'
-#' nearest_to(improve_vectorspace(demo_vectors),"great")
+#' closest_to(improve_vectorspace(demo_vectors),"great")
 #'
 improve_vectorspace = function(vectorspace,D=round(ncol(vectorspace)/100)) {
   mean = methods::new("VectorSpaceModel",
@@ -531,9 +531,9 @@ filter_to_rownames <- function(matrix,words) {
 #' subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=FALSE]]
 #' similarities = cosineSimilarity(subjects,subjects)
 #'
-#' # Use 'nearest_to' to build up a large list of similar words to a seed set.
+#' # Use 'closest_to' to build up a large list of similar words to a seed set.
 #' subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=TRUE]]
-#' new_subject_list = nearest_to(demo_vectors,subjects,20)
+#' new_subject_list = closest_to(demo_vectors,subjects,20)
 #' new_subjects = demo_vectors[[new_subject_list$word,average=FALSE]]
 #'
 #' # Plot the cosineDistance of these as a dendrogram.
@@ -637,10 +637,10 @@ project = function(matrix,vector) {
 #' See `project` for more details.
 #'
 #' @examples
-#' nearest_to(demo_vectors,demo_vectors[["man"]])
+#' closest_to(demo_vectors,demo_vectors[["man"]])
 #'
 #' genderless = reject(demo_vectors,demo_vectors[["he"]] - demo_vectors[["she"]])
-#' nearest_to(genderless,genderless[["man"]])
+#' closest_to(genderless,genderless[["man"]])
 #'
 #' @export
 reject = function(matrix,vector) {
@@ -673,12 +673,12 @@ reject = function(matrix,vector) {
 #' See `project` for more details and usage.
 #'
 #' @examples
-#' nearest_to(demo_vectors,"sweet")
+#' closest_to(demo_vectors,"sweet")
 #'
 #' # Stretch out the vectorspace 4x longer along the gender direction.
 #' more_sexist = distend(demo_vectors, ~ "man" + "he" - "she" -"woman", 4)
 #'
-#' nearest_to(more_sexist,"sweet")
+#' closest_to(more_sexist,"sweet")
 #'
 #' @export
 distend = function(matrix,vector, multiplier) {
@@ -692,7 +692,6 @@ distend = function(matrix,vector, multiplier) {
 #' @param vector  A vector (or a string or a formula coercable to a vector)
 #' of the same length as the VectorSpaceModel. See below.
 #' @param n The number of closest words to include.
-#' @param as_df Return as a data.frame? If false, returns a named vector, for back-compatibility.
 #' @param fancy_names If true (the default) the data frame will have descriptive names like
 #' 'similarity to "king+queen-man"'; otherwise, just 'similarity.' The default can speed up
 #'  interactive exploration.
@@ -704,8 +703,8 @@ distend = function(matrix,vector, multiplier) {
 #' 'cosineSimilarity'; the listing of several words similar to a given vector.
 #' Unlike cosineSimilarity, it returns a data.frame object instead of a matrix.
 #' cosineSimilarity is more powerful, because it can compare two matrices to
-#' each other; nearest_to can only take a vector or vectorlike object as its second argument.
-#' But with (or without) the argument n=Inf, nearest_to is often better for
+#' each other; closest_to can only take a vector or vectorlike object as its second argument.
+#' But with (or without) the argument n=Inf, closest_to is often better for
 #' plugging directly into a plot.
 #'
 #' As with cosineSimilarity, the second argument can take several forms. If it's a vector or
@@ -717,26 +716,26 @@ distend = function(matrix,vector, multiplier) {
 #' @examples
 #'
 #' # Synonyms and similar words
-#' nearest_to(demo_vectors,demo_vectors[["good"]])
+#' closest_to(demo_vectors,demo_vectors[["good"]])
 #'
 #' # If 'matrix' is a VectorSpaceModel object,
 #' # you can also just enter a string directly, and
 #' # it will be evaluated in the context of the passed matrix.
 #'
-#' nearest_to(demo_vectors,"good")
+#' closest_to(demo_vectors,"good")
 #'
 #' # You can also express more complicated formulas.
 #'
-#' nearest_to(demo_vectors,"good")
+#' closest_to(demo_vectors,"good")
 #'
 #' # Something close to the classic king:man::queen:woman;
 #' # What's the equivalent word for a female teacher that "guy" is for
 #' # a male one?
 #'
-#' nearest_to(demo_vectors,~ "guy" - "man" + "woman")
+#' closest_to(demo_vectors,~ "guy" - "man" + "woman")
 #'
 #' @export
-nearest_to = function(matrix, vector, n=10, as_df = TRUE, fancy_names = TRUE) {
+closest_to = function(matrix, vector, n=10, fancy_names = TRUE) {
   label = deparse(substitute(vector),width.cutoff=500)
   if (substr(label,1,1)=="~") {label = substr(label,2,500)}
 
@@ -749,20 +748,37 @@ nearest_to = function(matrix, vector, n=10, as_df = TRUE, fancy_names = TRUE) {
   # For sorting.
   ords = order(-sims[,1])
 
-  if (!as_df) {
-    structure(
-      1-sims[ords[1:n]], # Convert from similarity to distance.
-      names=rownames(sims)[ords[1:n]])
+  return_val = data.frame(rownames(sims)[ords[1:n]], sims[ords[1:n]],stringsAsFactors=FALSE)
+  if (fancy_names) {
+    names(return_val) = c("word", paste("similarity to", label))
   } else {
-    return_val = data.frame(rownames(sims)[ords[1:n]], sims[ords[1:n]],stringsAsFactors=FALSE)
-    if (fancy_names) {
-      names(return_val) = c("word", paste("similarity to", label))
-    } else {
-      names(return_val) = c("word","similarity")
-    }
-    rownames(return_val) = NULL
-    return_val
+    names(return_val) = c("word","similarity")
   }
+  rownames(return_val) = NULL
+  return_val
 }
 
 
+#' Nearest vectors to a word
+#'
+#' @description This a wrapper around closest_to, included for back-compatibility. Use
+#' closest_to for new applications.
+#' @param ... See `closest_to`
+#'
+#' @return a names vector of cosine similarities. See 'nearest_to' for more details.
+#' @export
+#'
+#' @examples
+#'
+#' # Recommended usage in 1.0:
+#' nearest_to(demo_vectors, demo_vectors[["good"]])
+#'
+#' # Recommended usage in 2.0:
+#' demo_vectors %>% closest_to("good")
+#'
+nearest_to = function(...) {
+  vals = closest_to(...,fancy_names = F)
+  returnable = 1 - vals$similarity
+  names(returnable) = vals$word
+  returnable
+}

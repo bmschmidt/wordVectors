@@ -1,12 +1,15 @@
 # VERSION 2.0
 
-Upgrade focusing on ease of use and CRAN-ability. Bumping major version because of a breaking change in the behavior of `nearest_to`, which now returns a data.frame.
+Upgrade focusing on ease of use and CRAN-ability. Bumping major version because of a breaking change in the behavior of `closest_to`, which now returns a data.frame.
 
 # Changes
 
-## Change in nearest_to behavior.
+## New default function: closest_to.
 
-There's a change in `nearest_to` that will break some existing code. Now it returns a data.frame instead of a list. The data.frame columns have elaborate names so they can easily be manipulated with dplyr, and/or plotted with ggplot. There are flags to return to the old behavior (`as_df=FALSE`).
+`nearest_to` was previously the easiest way to interact with cosine similarity functions. That's been deprecated
+in favor of a new function, `closest_to`. (I would have changed the name but for back-compatibility reasons.)
+The data.frame columns have elaborate names so they can easily be manipulated with dplyr, and/or plotted with ggplot.
+`nearest_to` is now just a wrapped version of the new function.
 
 ## New syntax for vector addition.
 
@@ -14,13 +17,13 @@ This package now allows formula scoping for the most common operations, and stri
 
 For instance, instead of writing 
 ```R
-vectors %>% nearest_to(vectors[rownames(vectors)=="king",] - vectors[rownames(vectors)=="man",] + vectors[rownames(vectors)=="woman",])
+vectors %>% closest_to(vectors[rownames(vectors)=="king",] - vectors[rownames(vectors)=="man",] + vectors[rownames(vectors)=="woman",])
 ```
 
 (whew!), you can write
 
 ```R
-vectors %>% nearest_to(~"king" - "man" + "woman")
+vectors %>% closest_to(~"king" - "man" + "woman")
 ```
 
 

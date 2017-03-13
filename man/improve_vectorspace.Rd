@@ -19,11 +19,11 @@ See reference for a full description. Supposedly, these operations will improve 
 }
 \examples{
 
-nearest_to(demo_vectors,"great")
+closest_to(demo_vectors,"great")
 # stopwords like "and" and "very" are no longer top ten.
 # I don't know if this is really better, though.
 
-nearest_to(improve_vectorspace(demo_vectors),"great")
+closest_to(improve_vectorspace(demo_vectors),"great")
 
 }
 \references{

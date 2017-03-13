@@ -2,25 +2,25 @@ context("Name collapsing")
 
 test_that("name substitution works",
   expect_equivalent(
-    demo_vectors %>% nearest_to(~"good")
+    demo_vectors %>% closest_to(~"good")
     ,
-    demo_vectors %>% nearest_to(demo_vectors[["good"]])
+    demo_vectors %>% closest_to(demo_vectors[["good"]])
   )
 )
 
 test_that("character substitution works",
           expect_equivalent(
-            demo_vectors %>% nearest_to("good")
+            demo_vectors %>% closest_to("good")
             ,
-            demo_vectors %>% nearest_to(demo_vectors[["good"]])
+            demo_vectors %>% closest_to(demo_vectors[["good"]])
           )
 )
 
 test_that("addition works in substitutions",
           expect_equivalent(
-            demo_vectors %>% nearest_to(~ "good" + "bad")
+            demo_vectors %>% closest_to(~ "good" + "bad")
             ,
-            demo_vectors %>% nearest_to(demo_vectors[["good"]] + demo_vectors[["bad"]])
+            demo_vectors %>% closest_to(demo_vectors[["good"]] + demo_vectors[["bad"]])
           )
 )
 
@@ -32,16 +32,16 @@ test_that("addition provides correct results",
 
 test_that("single-argument negation works",
           expect_equivalent(
-            demo_vectors %>% nearest_to(~ -("good"-"bad"))
+            demo_vectors %>% closest_to(~ -("good"-"bad"))
             ,
-            demo_vectors %>% nearest_to(~ "bad"-"good")
+            demo_vectors %>% closest_to(~ "bad"-"good")
 
           ))
 
-test_that("nearest_to can wrap in function",
+test_that("closest_to can wrap in function",
           expect_equal(
-            {function(x) {nearest_to(x,~ "class" + "school")}}(demo_vectors),
-            nearest_to(demo_vectors,~ "class" + "school")
+            {function(x) {closest_to(x,~ "class" + "school")}}(demo_vectors),
+            closest_to(demo_vectors,~ "class" + "school")
           )
 )
 
@@ -54,7 +54,7 @@ test_that("Name substitution is occurring",
 test_that("reference in functional scope is passed along",
           expect_equivalent(
             lapply(c("good"),function(referenced_word)
-              {demo_vectors %>% nearest_to(demo_vectors[[referenced_word]])})[[1]],
-            demo_vectors %>% nearest_to("good")
+              {demo_vectors %>% closest_to(demo_vectors[[referenced_word]])})[[1]],
+            demo_vectors %>% closest_to("good")
          )
 )
