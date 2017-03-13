@@ -17,4 +17,3 @@ This is an extraordinarily simple function.
 \description{
 Vector Magnitudes
 }
-

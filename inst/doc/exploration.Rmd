@@ -1,0 +1,168 @@
+---
+title: "Word2Vec Workshop"
+author: "Ben Schmidt"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Exploring Word2Vec models
+
+R is a great language for *exploratory data analysis* in particular. If you're going to use a word2vec model in a larger pipeline, it may be important (intellectually or ethically) to spend a little while understanding what kind of model of language you've learned.
+
+This package makes it easy to do so, both by allowing you to read word2vec models to and from R, and by giving some syntactic sugar that lets you describe vector-space models concisely and clearly.
+
+Note that these functions may still be useful if you're a data analyst training word2vec models elsewhere (say, in gensim.) I'm also hopeful this can be a good way of interacting with varied vector models in a workshop session.
+
+If you want to train your own model or need help setting up the package, read the introductory vignette. Aside from the installation, it assumes more knowledge of R than this walkthrough.
+
+## Why explore?
+
+In this vignette we're going to look at (a small portion of) a model trained on teaching evaluations. It's an interesting set, but it's also one that shows the importance of exploring vector space models before you use them. Exploration is important because:
+
+1. If you're a humanist or social scientist, it can tell you something about the *sources* by letting you see how they use language. These co-occurrence patterns can then be better investigated through close reading or more traditional collocation scores, which potentially more reliable but also much slower and less flexible.
+
+2. If you're an engineer, it can help you understand some of biases built into a model that you're using in a larger pipeline. This can be both technically and ethically important: you don't want, for instance, to build a job-recommendation system which is disinclined to offer programming jobs to women because it has learned that women are unrepresented in CS jobs already.
+(On this point in word2vec in particular, see [here](https://freedom-to-tinker.com/blog/randomwalker/language-necessarily-contains-human-biases-and-so-will-machines-trained-on-language-corpora/) and [here](https://arxiv.org/abs/1607.06520).)
+
+## Getting started.
+
+First we'll load this package, and the recommended package `magrittr`, which lets us pass these arguments around.
+
+```{r}
+library(wordVectors)
+library(magrittr)
+```
+
+The basic element of any vector space model is a *vectors.* for each word. In the demo data included with this package, an object called 'demo_vectors,' there are 500 numbers: you can start to examine them, if you with, by hand. So let's consider just one of these--the vector for 'good'.
+
+In R's ordinary matrix syntax, you could write that out laboriously as `demo_vectors[rownames(demo_vectors)=="good",]`. `WordVectors` provides a shorthand using double braces:
+
+```{r}
+demo_vectors[["good"]]
+```
+
+These numbers are meaningless on their own. But in the vector space, we can find similar words.
+
+```{r}
+demo_vectors %>% closest_to(demo_vectors[["good"]])
+```
+
+The `%>%` is the pipe operator from magrittr; it helps to keep things organized, and is particularly useful with some of the things we'll see later. The 'similarity' scores here are cosine similarity in a vector space; 1.0 represents perfect similarity, 0 is no correlation, and -1.0 is complete opposition. In practice, vector "opposition" is different from the colloquial use of "opposite," and very rare. You'll only occasionally see vector scores below 0--as you can see above, "bad" is actually one of the most similar words to "good."
+
+When interactively exploring a single model (rather than comparing *two* models), it can be a pain to keep retyping words over and over. Rather than operate on the vectors, this package also lets you access the word directly by using R's formula notation: putting a tilde in front of it. For a single word, you can even access it directly, as so.
+
+```{r}
+demo_vectors %>% closest_to("bad")
+```
+
+## Vector math
+
+The tildes are necessary syntax where things get interesting--you can do **math** on these vectors. So if we want to find the words that are closest to the *combination* of "good" and "bad" (which is to say, words that get used in evaluation) we can write (see where the tilde is?):
+
+```{r}
+
+demo_vectors %>% closest_to(~"good"+"bad")
+
+# The same thing could be written as:
+# demo_vectors %>% closest_to(demo_vectors[["good"]]+demo_vectors[["bad"]])
+```
+
+Those are words that are common to both "good" and "bad". We could also find words that are shaded towards just good but *not* bad by using subtraction.
+
+```{r}
+demo_vectors %>% closest_to(~"good" - "bad")
+```
+
+> What does this "subtraction" vector mean? 
+> In practice, the easiest way to think of it is probably simply as 'similar to 
+> good and dissimilar to 'bad'. Omer and Levy's papers suggest this interpretation.
+> But taking the vectors more seriously means you can think of it geometrically: "good"-"bad" is
+> a vector that describes the difference between positive and negative.
+> Similarity to this vector means, technically, the portion of a words vectors whose
+> whose multidimensional path lies largely along the direction between the two words. 
+
+Again, you can easily switch the order to the opposite: here are a bunch of bad words:
+
+```{r}
+demo_vectors %>% closest_to(~ "bad" - "good")
+```
+
+All sorts of binaries are captured in word2vec models. One of the most famous, since Mikolov's original word2vec paper, is *gender*. If you ask for similarity to "he"-"she", for example, you get words that appear mostly in a *male* context. Since these examples are from teaching evaluations, after just a few straightforwardly gendered words, we start to get things that only men are ("arrogant") or where there are very few women in the university ("physics")
+
+```{r}
+demo_vectors %>% closest_to(~ "he" - "she")
+demo_vectors %>% closest_to(~ "she" - "he")
+```
+
+## Analogies
+
+We can expand out the match to perform analogies. Men tend to be called 'guys'. 
+What's the female equivalent?
+In an SAT-style analogy, you might write `he:guy::she:???`.
+In vector math, we think of this as moving between points. 
+
+If you're using the mental framework of positive of 'similarity' and
+negative as 'dissimilarity,' you can think of this as starting at "guy",
+removing its similarity to "he", and additing a similarity to "she".
+
+This yields the answer: the most similar term to "guy" for a woman is "lady."
+
+```{r}
+demo_vectors %>% closest_to(~ "guy" - "he" + "she")
+```
+
+If you're using the other mental framework, of thinking of these as real vectors, 
+you might phrase this in a slightly different way.
+You have a gender vector `("female" - "male")` that represents the *direction* of masculinity 
+to femininity. You can then add this vector to "guy", and that will take you to a new neighborhood. You might phrase that this way: note that the math is exactly equivalent, and
+only the grouping is different.
+
+```{r}
+demo_vectors %>% closest_to(~ "guy" + ("she" - "he"))
+```
+
+Principal components can let you plot a subset of these vectors to see how they relate. You can imagine an arrow from "he" to "she", from "guy" to "lady", and from "man" to "woman"; all run in roughly the same direction.
+
+```{r}
+
+demo_vectors[[c("lady","woman","man","he","she","guy","man"), average=F]] %>% 
+  plot(method="pca")
+
+```
+
+These lists of ten words at a time are useful for interactive exploration, but sometimes we might want to say 'n=Inf' to return the full list. For instance, we can combine these two methods to look at positive and negative words used to evaluate teachers. 
+
+First we build up three data_frames: first, a list of the 50 top evaluative words, and then complete lists of similarity to `"good" -"bad"` and `"woman" - "man"`. 
+
+```{r}
+top_evaluative_words = demo_vectors %>% 
+   closest_to(~ "good"+"bad",n=75)
+
+goodness = demo_vectors %>% 
+  closest_to(~ "good"-"bad",n=Inf) 
+
+femininity = demo_vectors %>% 
+  closest_to(~ "she" - "he", n=Inf)
+```
+
+Then we can use tidyverse packages to join and plot these.
+An `inner_join` restricts us down to just those top 50 words, and ggplot
+can array the words on axes.
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+top_evaluative_words %>%
+  inner_join(goodness) %>%
+  inner_join(femininity) %>%
+  ggplot() + 
+  geom_text(aes(x=`similarity to "she" - "he"`,
+                y=`similarity to "good" - "bad"`,
+                label=word))
+```
+

@@ -5,15 +5,14 @@
 \alias{plot,VectorSpaceModel-method}
 \title{Plot a Vector Space Model.}
 \usage{
-\S4method{plot}{VectorSpaceModel}(x, y, ...)
+\S4method{plot}{VectorSpaceModel}(x, method = "tsne", ...)
 }
 \arguments{
 \item{x}{The model to plot}
 
-\item{y}{(ignored)}
+\item{method}{The method to use for plotting. "pca" is principal components, "tsne" is t-sne}
 
-\item{...}{Further arguments passed to tsne::tsne.
-(Note: not to plot.)}
+\item{...}{Further arguments passed to the plotting method.}
 }
 \value{
 The TSNE model (silently.)
@@ -24,6 +23,9 @@ sanest thing to do is reduce the full model down to two dimensions
 using T-SNE, which preserves some of the local clusters.
 }
 \details{
+For individual subsections, it can make sense to do a principal components
+plot of the space of just those letters. This is what happens if method
+is pca. On the full vocab, it's kind of a mess.
+
 This plots only the first 300 words in the model.
 }
-

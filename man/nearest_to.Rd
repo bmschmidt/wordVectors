@@ -2,34 +2,26 @@
 % Please edit documentation in R/matrixFunctions.R
 \name{nearest_to}
 \alias{nearest_to}
-\title{Return the n closest words in a VectorSpaceModel to a given vector.}
+\title{Nearest vectors to a word}
 \usage{
-nearest_to(matrix, vector, n = 10)
+nearest_to(...)
 }
 \arguments{
-\item{matrix}{A matrix or VectorSpaceModel}
-
-\item{vector}{Avector (or an object coercable to a vector, see project)
-of the same length as the VectorSpaceModel.}
-
-\item{n}{The number of closest words to include.}
+\item{...}{See `closest_to`}
 }
 \value{
-A vector of distances, with names corresponding to the words
-in the parent VectorSpaceModel, of length n.
+a names vector of cosine similarities. See 'nearest_to' for more details.
 }
 \description{
-Return the n closest words in a VectorSpaceModel to a given vector.
+This a wrapper around closest_to, included for back-compatibility. Use
+closest_to for new applications.
 }
 \examples{
 
-#Synonyms and similar words
-nearest_to(demo_vectors,demo_vectors[["good"]])
+# Recommended usage in 1.0:
+nearest_to(demo_vectors, demo_vectors[["good"]])
 
-# Something close to the classic king:man::queen:woman;
-# What's the equivalent word for a female teacher that "guy" is for
-# a male one?
-nearest_to(demo_vectors,demo_vectors[["guy"]] - demo_vectors[["man"]] + demo_vectors[["woman"]])
+# Recommended usage in 2.0:
+demo_vectors \%>\% closest_to("good")
 
 }
-

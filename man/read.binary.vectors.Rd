@@ -20,10 +20,10 @@ the whole matrix into memory. This limit is applied BEFORE `name_list` and
 if you are in a memory-limited environment,
 you can limit the number of columns you read in by giving a vector of column integers}
 
-\item{name_list}{A whitelist of words. If you wish to read in only a few dozen words,
+\item{rowname_list}{A whitelist of words. If you wish to read in only a few dozen words,
 all other rows will be skipped and only these read in.}
 
-\item{name_regexp}{A regular expression specifying a pattern for rows to read in. Row
+\item{rowname_regexp}{A regular expression specifying a pattern for rows to read in. Row
 names matching that pattern will be included in the read; all others will be skipped.}
 }
 \value{
@@ -32,4 +32,3 @@ A VectorSpaceModel object
 \description{
 Read binary word2vec format files
 }
-

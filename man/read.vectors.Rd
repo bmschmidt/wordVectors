@@ -4,18 +4,19 @@
 \alias{read.vectors}
 \title{Read VectorSpaceModel}
 \usage{
-read.vectors(filename, vectors = guess_n_cols(), binary = FALSE, ...)
+read.vectors(filename, vectors = guess_n_cols(), binary = NULL, ...)
 }
 \arguments{
 \item{filename}{The file to read in.}
 
 \item{vectors}{The number of dimensions word2vec calculated. Imputed automatically if not specified.}
 
-\item{binary}{Read in the binary word2vec form. (Wraps `read.binary.vectors`)}
+\item{binary}{Read in the binary word2vec form. (Wraps `read.binary.vectors`) By default, function
+guesses based on file suffix.}
 
 \item{...}{Further arguments passed to read.table or read.binary.vectors.
-Note that both accept 'nrow' as an argument. Word2vec produces
-by default frequency sorted output. Therefore 'read.vectors(...,nrows=500)', for example,
+Note that both accept 'nrows' as an argument. Word2vec produces
+by default frequency sorted output. Therefore 'read.vectors("file.bin", nrows=500)', for example,
 will return the vectors for the top 500 words. This can be useful on machines with limited
 memory.}
 }
@@ -25,4 +26,3 @@ An matrixlike object of class `VectorSpaceModel`
 \description{
 Read a VectorSpaceModel from a file exported from word2vec or a similar output format.
 }
-

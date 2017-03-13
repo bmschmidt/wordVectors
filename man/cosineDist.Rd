@@ -12,7 +12,8 @@ cosineDist(x, y)
 \item{y}{A matrix, VectorSpaceModel, or vector.}
 }
 \value{
-A matrix whose dimnames are rownames(x), rownames(y)
+A matrix whose dimnames are rownames(x), rownames(y) and whose entires are
+the associated distance.
 }
 \description{
 Calculate the cosine distance between two vectors.
@@ -21,4 +22,3 @@ Not an actual distance metric, but can be used in similar contexts.
 It is calculated as simply the inverse of cosine similarity,
 and falls in a fixed range of 0 (identical) to 2 (completely opposite in direction.)
 }
-

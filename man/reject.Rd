@@ -25,9 +25,9 @@ See `project` for more details.
 Return a vector rejection for each element in a VectorSpaceModel
 }
 \examples{
-nearest_to(demo_vectors,demo_vectors[["man"]])
+closest_to(demo_vectors,demo_vectors[["man"]])
+
 genderless = reject(demo_vectors,demo_vectors[["he"]] - demo_vectors[["she"]])
-nearest_to(genderless,genderless[["man"]])
+closest_to(genderless,genderless[["man"]])
 
 }
-

@@ -11,15 +11,22 @@
 ##' @title Train a model by word2vec.
 ##' @param train_file Path of a single .txt file for training. Tokens are split on spaces.
 ##' @param output_file Path of the output file.
-##' @param vectors The number of vectors to output. Defaults to 100. More vectors may be useful with large files.
-##' @param threads Number of threads to run training process on. Defaults to 1; up to the number of cores on your machine may be useful.
+##' @param vectors The number of vectors to output. Defaults to 100.
+##' More vectors usually means more precision, but also more random error, higher memory usage, and slower operations.
+##' Sensible choices are probably in the range 100-500.
+##' @param threads Number of threads to run training process on.
+##' Defaults to 1; up to the number of (virtual) cores on your machine may speed things up.
 ##' @param window The size of the window (in words) to use in training.
 ##' @param classes Number of classes for k-means clustering. Not documented/tested.
-##' @param cbow If 1, use a continuous-bag-of-words model instead of skip-grams. Defaults to false (recommended for newcomers).
-##' @param min_count Minimum times a word must appear to be included in the samples. High values help reduce model size.
+##' @param cbow If 1, use a continuous-bag-of-words model instead of skip-grams.
+##' Defaults to false (recommended for newcomers).
+##' @param min_count Minimum times a word must appear to be included in the samples.
+##' High values help reduce model size.
 ##' @param iter Number of passes to make over the corpus in training.
-##' @param force Whether to overwrite existing files.
-##' @return A word2vec object.
+##' @param force Whether to overwrite existing model files.
+##' @param negative_samples Number of negative samples to take in skip-gram training. 0 means full sampling, while lower numbers
+##' give faster training. For large corpora 2-5 may work; for smaller corpora, 5-15 is reasonable.
+##' @return A VectorSpaceModel object.
 ##' @author Jian Li <\email{rweibo@@sina.com}>, Ben Schmidt <\email{bmchmidt@@gmail.com}>
 ##' @references \url{https://code.google.com/p/word2vec/}
 ##' @export
@@ -27,10 +34,10 @@
 ##' @useDynLib wordVectors
 ##'
 ##' @examples \dontrun{
-##' model = word2vec(system.file("examples", "rfaq.txt", package = "tmcn.word2vec"))
+##' model = train_word2vec(system.file("examples", "rfaq.txt", package = "wordVectors"))
 ##' }
 train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,threads=1,window=12,
-                           classes=0,cbow=0,min_count=5,iter=5,force=F)
+                           classes=0,cbow=0,min_count=5,iter=5,force=F, negative_samples=5)
 {
   if (!file.exists(train_file)) stop("Can't find the training file!")
   if (file.exists(output_file) && !force) stop("The output file '",
@@ -64,7 +71,8 @@ train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,t
             classes=as.character(classes),
             cbow=as.character(cbow),
             min_count=as.character(min_count),
-            iter=as.character(iter)
+            iter=as.character(iter),
+            neg_samples=as.character(negative_samples)
   )
 
   read.vectors(output_file)
@@ -83,10 +91,6 @@ train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,t
 #' @param origin A text file or a directory of text files
 #'  to be used in training the model
 #' @param destination The location for output text.
-#' @param split_characters If the 'stringi' package is not installed,
-#' A list of characters that mark word breaks. By default,
-#' any nonword characters according to the perl regex engine. If stringi is installed,
-#' this parameter is ignored.
 #' @param lowercase Logical. Should uppercase characters be converted to lower?
 #' @param bundle_ngrams Integer. Statistically significant phrases of up to this many words
 #' will be joined with underscores: e.g., "United States" will usually be changed to "United_States"
@@ -98,27 +102,13 @@ train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,t
 #' @export
 #'
 #' @return The file name (silently).
-prep_word2vec <- function(origin,destination,
-                          split_characters="\\W",lowercase=F,
-                          bundle_ngrams=1,...)
+prep_word2vec <- function(origin,destination,lowercase=F,
+                          bundle_ngrams=1, ...)
 {
   # strsplit chokes on large lines. I would not have gone down this path if I knew this
   # to begin with.
-  non_choking_strsplit <- function(lines,...) {
-    splitLineIfNecessary = function(line,limit=10000) {
-      # recursive function.
-      chars = nchar(line)
-      if (chars < limit) {
-        return(line)
-      } else {
-        first_half = substr(line,1,nchar(line) %/% 2)
-        second_half = substr(line,1,nchar(line) %/% 2)
-        return(c(splitLineIfNecessary(first_half),splitLineIfNecessary(second_half)))
-      }
-    }
-    lines = unlist(lapply(lines,splitLineIfNecessary))
-    unlist(strsplit(lines,...))
-  }
+
+
 
   message("Beginning tokenization to text file at ", destination)
   if (!exists("dir.exists")) {
@@ -129,35 +119,36 @@ prep_word2vec <- function(origin,destination,
       stats::setNames(res, x)
     }
   }
+
   if (dir.exists(origin)) {
     origin = list.files(origin,recursive=T,full.names = T)
   }
-  cat("",file=destination,append=F)
 
+  if (file.exists(destination)) file.remove(destination)
 
-  if (require(stringi)) {
-    using_stringi = TRUE
-  } else {
-    warning("Install the stringi package ('install.packages(\"stringi\")') for much more efficient word tokenization")
+  tokenize_words = function (x, lowercase = TRUE) {
+    # This is an abbreviated version of the "tokenizers" package version to remove the dependency.
+    # Sorry, Lincoln, it was failing some tests.
+    if (lowercase) x <- stringi::stri_trans_tolower(x)
+    out <- stringi::stri_split_boundaries(x, type = "word", skip_word_none = TRUE)
+    unlist(out)
   }
-  for (filename in origin) {
-    message("\n",filename,appendLF=F)
-    con = file(filename,open="r")
-    while(length(lines <- readLines(con, n = 1000, warn = FALSE))>0) {
-      message(".",appendLF=F)
-      if(using_stringi) {
-        words = unlist(stri_extract_all_words(lines))
-      } else {
-        words = non_choking_strsplit(lines,split_characters,perl=T)
-      }
-      if (lowercase) {words=tolower(words)}
-      cat(c(words," "),file=destination,append=T)
-    }
 
-    close(con)
-    cat(c("\n"),file=destination,append=T)
+  prep_single_file <- function(file_in, file_out, lowercase) {
+    message("Prepping ", file_in)
 
+    text <- file_in %>%
+      readr::read_file() %>%
+      tokenize_words(lowercase) %>%
+      stringr::str_c(collapse = " ")
+
+    stopifnot(length(text) == 1)
+    readr::write_lines(text, file_out, append = TRUE)
+    return(TRUE)
   }
+
+
+  Map(prep_single_file, origin, lowercase=lowercase, file_out=destination)
 
   # Save the ultimate output
   real_destination_name = destination
@@ -195,7 +186,10 @@ prep_word2vec <- function(origin,destination,
 #' @param min_count Minimum times a word must appear to be included in the samples.
 #'   High values help reduce model size.
 #' @param threshold Threshold value for determining if pairs of words are phrases.
+#' @param force Whether to overwrite existing files at the output location. Default FALSE
+#'
 #' @return The name of output_file, the trained file where common phrases are now joined.
+#'
 #' @export
 #' @examples
 #' \dontrun{

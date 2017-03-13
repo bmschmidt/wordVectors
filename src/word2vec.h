@@ -18,6 +18,9 @@
 #include <math.h>
 #include <pthread.h>
 #include <time.h>
+#include "R.h"
+#include "Rmath.h"
+
 
 #define MAX_STRING 100
 #define EXP_TABLE_SIZE 1000
@@ -49,6 +52,7 @@ clock_t start;
 int hs = 1, negative = 0;
 const int table_size = 1e8;
 int *table;
+
 
 void InitUnigramTable() {
   int a, i;
@@ -189,7 +193,7 @@ void ReduceVocab() {
     while (vocab_hash[hash] != -1) hash = (hash + 1) % vocab_hash_size;
     vocab_hash[hash] = a;
   }
-  fflush(stdout);
+  fflush(NULL);
   min_reduce++;
 }
 
@@ -267,8 +271,8 @@ void LearnVocabFromTrainFile() {
   for (a = 0; a < vocab_hash_size; a++) vocab_hash[a] = -1;
   fin = fopen(train_file, "rb");
   if (fin == NULL) {
-    printf("ERROR: training data file not found!\n");
-    exit(1);
+    Rprintf("ERROR: training data file not found!\n");
+    Rf_error("Error!");
   }
   vocab_size = 0;
   AddWordToVocab((char *)"</s>");
@@ -276,9 +280,9 @@ void LearnVocabFromTrainFile() {
     ReadWord(word, fin);
     if (feof(fin)) break;
     train_words++;
-    if ((debug_mode > 1) && (train_words % 100000 == 0)) {
-      printf("%lldK%c", train_words / 1000, 13);
-      fflush(stdout);
+        if ((debug_mode > 1) && (train_words % 100000 == 0)) {
+          Rprintf("%lldK%c", train_words / 1000, 13);
+          fflush(NULL);
     }
     i = SearchVocab(word);
     if (i == -1) {
@@ -289,8 +293,8 @@ void LearnVocabFromTrainFile() {
   }
   SortVocab();
   if (debug_mode > 0) {
-    printf("Vocab size: %lld\n", vocab_size);
-    printf("Words in train file: %lld\n", train_words);
+    Rprintf("Vocab size: %lld\n", vocab_size);
+    Rprintf("Words in train file: %lld\n", train_words);
   }
   file_size = ftell(fin);
   fclose(fin);
@@ -309,8 +313,8 @@ void ReadVocab() {
   char word[MAX_STRING];
   FILE *fin = fopen(read_vocab_file, "rb");
   if (fin == NULL) {
-    printf("Vocabulary file not found\n");
-    exit(1);
+    Rprintf("Vocabulary file not found\n");
+    Rf_error("Error!");
   }
   for (a = 0; a < vocab_hash_size; a++) vocab_hash[a] = -1;
   vocab_size = 0;
@@ -318,18 +322,19 @@ void ReadVocab() {
     ReadWord(word, fin);
     if (feof(fin)) break;
     a = AddWordToVocab(word);
-    if(fscanf(fin, "%lld%c", &vocab[a].cn, &c)==1);
+    if(fscanf(fin, "%lld%c", &vocab[a].cn, &c)==1)
+      ;
     i++;
   }
   SortVocab();
   if (debug_mode > 0) {
-    printf("Vocab size: %lld\n", vocab_size);
-    printf("Words in train file: %lld\n", train_words);
+    Rprintf("Vocab size: %lld\n", vocab_size);
+    Rprintf("Words in train file: %lld\n", train_words);
   }
   fin = fopen(train_file, "rb");
   if (fin == NULL) {
-    printf("ERROR: training data file not found!\n");
-    exit(1);
+    Rprintf("ERROR: training data file not found!\n");
+    Rf_error("Error!");
   }
   fseek(fin, 0, SEEK_END);
   file_size = ftell(fin);
@@ -346,16 +351,16 @@ void InitNet() {
   a = posix_memalign((void **)&syn0, 128, (long long)vocab_size * layer1_size * sizeof(real));
 #endif
 
-  if (syn0 == NULL) {printf("Memory allocation failed\n"); exit(1);}
+  if (syn0 == NULL) {Rprintf("Memory allocation failed\n"); Rf_error("Error!");}
   if (hs) {
 //    a = posix_memalign((void **)&syn1, 128, (long long)vocab_size * layer1_size * sizeof(real));
 #ifdef _WIN32
     syn1 = (real *)_aligned_malloc((long long)vocab_size * layer1_size * sizeof(real), 128);
 #else
     a = posix_memalign((void **)&(syn1), 128, (long long)vocab_size * layer1_size * sizeof(real));
-#endif 
+#endif
 
-   if (syn1 == NULL) {printf("Memory allocation failed\n"); exit(1);}
+   if (syn1 == NULL) {Rprintf("Memory allocation failed\n"); Rf_error("Error!");}
     for (a = 0; a < vocab_size; a++) for (b = 0; b < layer1_size; b++)
      syn1[a * layer1_size + b] = 0;
   }
@@ -366,8 +371,8 @@ void InitNet() {
 #else
     a = posix_memalign((void **)&(syn1neg), 128, (long long)vocab_size * layer1_size * sizeof(real));
 #endif
-    
-if (syn1neg == NULL) {printf("Memory allocation failed\n"); exit(1);}
+
+if (syn1neg == NULL) {Rprintf("Memory allocation failed\n"); Rf_error("Error!");}
     for (a = 0; a < vocab_size; a++) for (b = 0; b < layer1_size; b++)
      syn1neg[a * layer1_size + b] = 0;
   }
@@ -383,6 +388,8 @@ void *TrainModelThread(void *id) {
   long long word_count = 0, last_word_count = 0, sen[MAX_SENTENCE_LENGTH + 1];
   long long l1, l2, c, target, label, local_iter = iter;
   unsigned long long next_random = (long long)id;
+  //  real doneness_f, speed_f;
+  // For writing to R.
   real f, g;
   clock_t now;
   real *neu1 = (real *)calloc(layer1_size, sizeof(real));
@@ -392,14 +399,17 @@ void *TrainModelThread(void *id) {
   while (1) {
     if (word_count - last_word_count > 10000) {
       word_count_actual += word_count - last_word_count;
-      last_word_count = word_count;
-      if ((debug_mode > 1)) {
-        now=clock();
-        printf("%cAlpha: %f  Progress: %.2f%%  Words/thread/sec: %.2fk  ", 13, alpha,
-         word_count_actual / (real)(iter * train_words + 1) * 100,
-         word_count_actual / ((real)(now - start + 1) / (real)CLOCKS_PER_SEC * 1000));
-        fflush(stdout);
-      }
+      last_word_count = word_count;      
+      /* if ((debug_mode > 1)) { */
+      /*   now=clock(); */
+      /* 	doneness_f = word_count_actual / (real)(iter * train_words + 1) * 100; */
+      /* 	speed_f = word_count_actual / ((real)(now - start + 1) / (real)CLOCKS_PER_SEC * 1000); */
+	  
+      /*   Rprintf("%cAlpha: %f  Progress: %.2f%%  Words/thread/sec: %.2fk  ", 13, alpha, */
+      /* 		doneness_f, speed_f); */
+
+      /*   fflush(NULL); */
+      /* } */
       alpha = starting_alpha * (1 - word_count_actual / (real)(iter * train_words + 1));
       if (alpha < starting_alpha * 0.0001) alpha = starting_alpha * 0.0001;
     }
@@ -559,7 +569,7 @@ void TrainModel() {
   long a, b, c, d;
   FILE *fo;
   pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
-  printf("Starting training using file %s\n", train_file);
+  Rprintf("Starting training using file %s\n", train_file);
   starting_alpha = alpha;
   if (read_vocab_file[0] != 0) ReadVocab(); else LearnVocabFromTrainFile();
   if (save_vocab_file[0] != 0) SaveVocab();
@@ -632,8 +642,8 @@ int ArgPos(char *str, int argc, char **argv) {
   int a;
   for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
     if (a == argc - 1) {
-      printf("Argument missing for %s\n", str);
-      exit(1);
+      Rprintf("Argument missing for %s\n", str);
+      Rf_error("Error!");
     }
     return a;
   }

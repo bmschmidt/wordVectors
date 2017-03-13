@@ -17,4 +17,3 @@ square_magnitudes Returns the square magnitudes and
 caches them if necessary
 }
 \keyword{internal}
-

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Ben Schmidt" />
+
+<meta name="date" content="2017-02-21" />
+
+<title>Word2Vec Workshop</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Word2Vec Workshop</h1>
+<h4 class="author"><em>Ben Schmidt</em></h4>
+<h4 class="date"><em>2017-02-21</em></h4>
+
+
+
+<div id="exploring-word2vec-models" class="section level1">
+<h1>Exploring Word2Vec models</h1>
+<p>R is a great language for <em>exploratory data analysis</em> in particular. If you’re going to use a word2vec model in a larger pipeline, it may be important (intellectually or ethically) to spend a little while understanding what kind of model of language you’ve learned.</p>
+<p>This package makes it easy to do so, both by allowing you to read word2vec models to and from R, and by giving some syntactic sugar that lets you describe vector-space models concisely and clearly.</p>
+<p>Note that these functions may still be useful if you’re a data analyst training word2vec models elsewhere (say, in gensim.) I’m also hopeful this can be a good way of interacting with varied vector models in a workshop session.</p>
+<p>If you want to train your own model or need help setting up the package, read the introductory vignette. Aside from the installation, it assumes more knowledge of R than this walkthrough.</p>
+<div id="why-explore" class="section level2">
+<h2>Why explore?</h2>
+<p>In this vignette we’re going to look at (a small portion of) a model trained on teaching evaluations. It’s an interesting set, but it’s also one that shows the importance of exploring vector space models before you use them. Exploration is important because:</p>
+<ol style="list-style-type: decimal">
+<li><p>If you’re a humanist or social scientist, it can tell you something about the <em>sources</em> by letting you see how they use language. These co-occurrence patterns can then be better investigated through close reading or more traditional collocation scores, which potentially more reliable but also much slower and less flexible.</p></li>
+<li><p>If you’re an engineer, it can help you understand some of biases built into a model that you’re using in a larger pipeline. This can be both technically and ethically important: you don’t want, for instance, to build a job-recommendation system which is disinclined to offer programming jobs to women because it has learned that women are unrepresented in CS jobs already. (On this point in word2vec in particular, see <a href="https://freedom-to-tinker.com/blog/randomwalker/language-necessarily-contains-human-biases-and-so-will-machines-trained-on-language-corpora/">here</a> and <a href="https://arxiv.org/abs/1607.06520">here</a>.)</p></li>
+</ol>
+</div>
+<div id="getting-started." class="section level2">
+<h2>Getting started.</h2>
+<p>First we’ll load this package, and the recommended package <code>magrittr</code>, which lets us pass these arguments around.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(wordVectors)
+<span class="kw">library</span>(magrittr)</code></pre></div>
+<p>The basic element of any vector space model is a <em>vectors.</em> for each word. In the demo data included with this package, an object called ‘demo_vectors,’ there are 500 numbers: you can start to examine them, if you with, by hand. So let’s consider just one of these–the vector for ‘good’.</p>
+<p>In R’s ordinary matrix syntax, you could write that out laboriously as <code>demo_vectors[rownames(demo_vectors)==&quot;good&quot;,]</code>. <code>WordVectors</code> provides a shorthand using double braces:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">demo_vectors[[<span class="st">&quot;good&quot;</span>]]</code></pre></div>
+<pre><code>## A VectorSpaceModel object of  1  words and  500  vectors
+##         V1    V2     V3     V4    V5    V6
+## [1,] 0.381 0.026 -0.006 -0.004 -0.09 0.075
+## attr(,&quot;.cache&quot;)
+## &lt;environment: 0xae47980&gt;</code></pre>
+<p>These numbers are meaningless on their own. But in the vector space, we can find similar words.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">demo_vectors %&gt;%<span class="st"> </span><span class="kw">closest_to</span>(demo_vectors[[<span class="st">&quot;good&quot;</span>]])</code></pre></div>
+<pre><code>##         word similarity to demo_vectors[[&quot;good&quot;]]
+## 1       good                            1.0000000
+## 2      great                            0.7089031
+## 3     decent                            0.6604300
+## 4        bad                            0.5263100
+## 5     really                            0.5206047
+## 6  excellent                            0.5196016
+## 7       nice                            0.5058916
+## 8        but                            0.5056037
+## 9        and                            0.4916693
+## 10         a                            0.4893531</code></pre>
+<p>The <code>%&gt;%</code> is the pipe operator from magrittr; it helps to keep things organized, and is particularly useful with some of the things we’ll see later. The ‘similarity’ scores here are cosine similarity in a vector space; 1.0 represents perfect similarity, 0 is no correlation, and -1.0 is complete opposition. In practice, vector “opposition” is different from the colloquial use of “opposite,” and very rare. You’ll only occasionally see vector scores below 0–as you can see above, “bad” is actually one of the most similar words to “good.”</p>
+<p>When interactively exploring a single model (rather than comparing <em>two</em> models), it can be a pain to keep retyping words over and over. Rather than operate on the vectors, this package also lets you access the word directly by using R’s formula notation: putting a tilde in front of it. For a single word, you can even access it directly, as so.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">demo_vectors %&gt;%<span class="st"> </span><span class="kw">closest_to</span>(<span class="st">&quot;bad&quot;</span>)</code></pre></div>
+<pre><code>##         word similarity to &quot;bad&quot;
+## 1        bad           1.0000000
+## 2       good           0.5263100
+## 3       hard           0.4661783
+## 4   terrible           0.4640076
+## 5     either           0.4545856
+## 6   horrible           0.4431282
+## 7         ok           0.4081203
+## 8  difficult           0.4038597
+## 9        but           0.3964500
+## 10  honestly           0.3904238</code></pre>
+</div>
+<div id="vector-math" class="section level2">
+<h2>Vector math</h2>
+<p>The tildes are necessary syntax where things get interesting–you can do <strong>math</strong> on these vectors. So if we want to find the words that are closest to the <em>combination</em> of “good” and “bad” (which is to say, words that get used in evaluation) we can write (see where the tilde is?):</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">demo_vectors %&gt;%<span class="st"> </span><span class="kw">closest_to</span>(~<span class="st">&quot;good&quot;</span>+<span class="st">&quot;bad&quot;</span>)</code></pre></div>
+<pre><code>##      word similarity to &quot;good&quot; + &quot;bad&quot;
+## 1     bad                    0.8845830
+## 2    good                    0.8621269
+## 3   great                    0.5917829
+## 4  decent                    0.5893969
+## 5    hard                    0.5362420
+## 6     but                    0.5135680
+## 7  really                    0.5025217
+## 8    nice                    0.5004618
+## 9      ok                    0.4751181
+## 10   that                    0.4692515</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># The same thing could be written as:</span>
+<span class="co"># demo_vectors %&gt;% closest_to(demo_vectors[[&quot;good&quot;]]+demo_vectors[[&quot;bad&quot;]])</span></code></pre></div>
+<p>Those are words that are common to both “good” and “bad”. We could also find words that are shaded towards just good but <em>not</em> bad by using subtraction.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">demo_vectors %&gt;%<span class="st"> </span><span class="kw">closest_to</span>(~<span class="st">&quot;good&quot;</span> -<span class="st"> &quot;bad&quot;</span>)</code></pre></div>
+<pre><code>##         word similarity to &quot;good&quot; - &quot;bad&quot;
+## 1       good                    0.4205466
+## 2      great                    0.3328308
+## 3  excellent                    0.3093233
+## 4     decent                    0.2418898
+## 5  fantastic                    0.2168332
+## 6   thorough                    0.2148802
+## 7  wonderful                    0.2093082
+## 8        and                    0.1995122
+## 9       very                    0.1979586
+## 10   awesome                    0.1975041</code></pre>
+<blockquote>
+<p>What does this “subtraction” vector mean? In practice, the easiest way to think of it is probably simply as ‘similar to good and dissimilar to ’bad’. Omer and Levy’s papers suggest this interpretation. But taking the vectors more seriously means you can think of it geometrically: “good”-“bad” is a vector that describes the difference between positive and negative. Similarity to this vector means, technically, the portion of a words vectors whose whose multidimensional path lies largely along the direction between the two words.</p>
+</blockquote>
+<p>Again, you can easily switch the order to the opposite: here are a bunch of bad words:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">demo_vectors %&gt;%<span class="st"> </span><span class="kw">closest_to</span>(~<span class="st"> &quot;bad&quot;</span> -<span class="st"> &quot;good&quot;</span>)</code></pre></div>
+<pre><code>##        word similarity to &quot;bad&quot; - &quot;good&quot;
+## 1       bad                    0.5501080
+## 2    either                    0.2372618
+## 3     awful                    0.1834758
+## 4     worse                    0.1832953
+## 5    stupid                    0.1745834
+## 6  terrible                    0.1626507
+## 7  horrible                    0.1536159
+## 8  honestly                    0.1466926
+## 9      dumb                    0.1455157
+## 10   unfair                    0.1449083</code></pre>
+<p>All sorts of binaries are captured in word2vec models. One of the most famous, since Mikolov’s original word2vec paper, is <em>gender</em>. If you ask for similarity to “he”-“she”, for example, you get words that appear mostly in a <em>male</em> context. Since these examples are from teaching evaluations, after just a few straightforwardly gendered words, we start to get things that only men are (“arrogant”) or where there are very few women in the university (“physics”)</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">demo_vectors %&gt;%<span class="st"> </span><span class="kw">closest_to</span>(~<span class="st"> &quot;he&quot;</span> -<span class="st"> &quot;she&quot;</span>)</code></pre></div>
+<pre><code>##        word similarity to &quot;he&quot; - &quot;she&quot;
+## 1        he                  0.5014923
+## 2       his                  0.4467857
+## 3       guy                  0.4179970
+## 4       hes                  0.4049624
+## 5       him                  0.3907059
+## 6        mr                  0.3827611
+## 7       man                  0.3713098
+## 8   himself                  0.3436856
+## 9  arrogant                  0.1662236
+## 10  physics                  0.1560129</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">demo_vectors %&gt;%<span class="st"> </span><span class="kw">closest_to</span>(~<span class="st"> &quot;she&quot;</span> -<span class="st"> &quot;he&quot;</span>)</code></pre></div>
+<pre><code>##       word similarity to &quot;she&quot; - &quot;he&quot;
+## 1      she                  0.5749598
+## 2      her                  0.5707957
+## 3     lady                  0.5067850
+## 4     shes                  0.5050173
+## 5    woman                  0.4741360
+## 6  herself                  0.4294012
+## 7       ms                  0.3842313
+## 8      mrs                  0.3745640
+## 9    sweet                  0.2067263
+## 10  person                  0.1084187</code></pre>
+</div>
+<div id="analogies" class="section level2">
+<h2>Analogies</h2>
+<p>We can expand out the match to perform analogies. Men tend to be called ‘guys’. What’s the female equivalent? In an SAT-style analogy, you might write <code>he:guy::she:???</code>. In vector math, we think of this as moving between points.</p>
+<p>If you’re using the mental framework of positive of ‘similarity’ and negative as ‘dissimilarity,’ you can think of this as starting at “guy”, removing its similarity to “he”, and additing a similarity to “she”.</p>
+<p>This yields the answer: the most similar term to “guy” for a woman is “lady.”</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">demo_vectors %&gt;%<span class="st"> </span><span class="kw">closest_to</span>(~<span class="st"> &quot;guy&quot;</span> -<span class="st"> &quot;he&quot;</span> +<span class="st"> &quot;she&quot;</span>)</code></pre></div>
+<pre><code>##       word similarity to &quot;guy&quot; - &quot;he&quot; + &quot;she&quot;
+## 1     lady                          0.8851965
+## 2    woman                          0.7777516
+## 3      she                          0.7025325
+## 4     shes                          0.6502704
+## 5      her                          0.6421576
+## 6      guy                          0.5533376
+## 7   person                          0.5437728
+## 8       ms                          0.4703695
+## 9  herself                          0.4589193
+## 10     mrs                          0.4508955</code></pre>
+<p>If you’re using the other mental framework, of thinking of these as real vectors, you might phrase this in a slightly different way. You have a gender vector <code>(&quot;female&quot; - &quot;male&quot;)</code> that represents the <em>direction</em> of masculinity to femininity. You can then add this vector to “guy”, and that will take you to a new neighborhood. You might phrase that this way: note that the math is exactly equivalent, and only the grouping is different.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">demo_vectors %&gt;%<span class="st"> </span><span class="kw">closest_to</span>(~<span class="st"> &quot;guy&quot;</span> +<span class="st"> </span>(<span class="st">&quot;she&quot;</span> -<span class="st"> &quot;he&quot;</span>))</code></pre></div>
+<pre><code>##       word similarity to &quot;guy&quot; + (&quot;she&quot; - &quot;he&quot;)
+## 1     lady                            0.8851965
+## 2    woman                            0.7777516
+## 3      she                            0.7025325
+## 4     shes                            0.6502704
+## 5      her                            0.6421576
+## 6      guy                            0.5533376
+## 7   person                            0.5437728
+## 8       ms                            0.4703695
+## 9  herself                            0.4589193
+## 10     mrs                            0.4508955</code></pre>
+<p>Principal components can let you plot a subset of these vectors to see how they relate. You can imagine an arrow from “he” to “she”, from “guy” to “lady”, and from “man” to “woman”; all run in roughly the same direction.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">demo_vectors[[<span class="kw">c</span>(<span class="st">&quot;lady&quot;</span>,<span class="st">&quot;woman&quot;</span>,<span class="st">&quot;man&quot;</span>,<span class="st">&quot;he&quot;</span>,<span class="st">&quot;she&quot;</span>,<span class="st">&quot;guy&quot;</span>,<span class="st">&quot;man&quot;</span>), average=F]] %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">plot</span>(<span class="dt">method=</span><span class="st">&quot;pca&quot;</span>)</code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p>These lists of ten words at a time are useful for interactive exploration, but sometimes we might want to say ‘n=Inf’ to return the full list. For instance, we can combine these two methods to look at positive and negative words used to evaluate teachers.</p>
+<p>First we build up three data_frames: first, a list of the 50 top evaluative words, and then complete lists of similarity to <code>&quot;good&quot; -&quot;bad&quot;</code> and <code>&quot;woman&quot; - &quot;man&quot;</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">top_evaluative_words =<span class="st"> </span>demo_vectors %&gt;%<span class="st"> </span>
+<span class="st">   </span><span class="kw">closest_to</span>(~<span class="st"> &quot;good&quot;</span>+<span class="st">&quot;bad&quot;</span>,<span class="dt">n=</span><span class="dv">75</span>)
+
+goodness =<span class="st"> </span>demo_vectors %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">closest_to</span>(~<span class="st"> &quot;good&quot;</span>-<span class="st">&quot;bad&quot;</span>,<span class="dt">n=</span><span class="ot">Inf</span>) 
+
+femininity =<span class="st"> </span>demo_vectors %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">closest_to</span>(~<span class="st"> &quot;she&quot;</span> -<span class="st"> &quot;he&quot;</span>, <span class="dt">n=</span><span class="ot">Inf</span>)</code></pre></div>
+<p>Then we can use tidyverse packages to join and plot these. An <code>inner_join</code> restricts us down to just those top 50 words, and ggplot can array the words on axes.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(ggplot2)
+<span class="kw">library</span>(dplyr)
+
+top_evaluative_words %&gt;%
+<span class="st">  </span><span class="kw">inner_join</span>(goodness) %&gt;%
+<span class="st">  </span><span class="kw">inner_join</span>(femininity) %&gt;%
+<span class="st">  </span><span class="kw">ggplot</span>() +<span class="st"> </span>
+<span class="st">  </span><span class="kw">geom_text</span>(<span class="kw">aes</span>(<span class="dt">x=</span><span class="st">`</span><span class="dt">similarity to &quot;she&quot; - &quot;he&quot;</span><span class="st">`</span>,
+                <span class="dt">y=</span><span class="st">`</span><span class="dt">similarity to &quot;good&quot; - &quot;bad&quot;</span><span class="st">`</span>,
+                <span class="dt">label=</span>word))</code></pre></div>
+<pre><code>## Joining, by = &quot;word&quot;
+## Joining, by = &quot;word&quot;</code></pre>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+</div>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
