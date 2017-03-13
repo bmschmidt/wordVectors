@@ -3,6 +3,7 @@
 export("%>%")
 export(align_models)
 export(as.VectorSpaceModel)
+export(closest_to)
 export(cosineDist)
 export(cosineSimilarity)
 export(distend)
