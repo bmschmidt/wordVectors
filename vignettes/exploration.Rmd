@@ -48,7 +48,7 @@ demo_vectors[["good"]]
 These numbers are meaningless on their own. But in the vector space, we can find similar words.
 
 ```{r}
-demo_vectors %>% nearest_to(demo_vectors[["good"]])
+demo_vectors %>% closest_to(demo_vectors[["good"]])
 ```
 
 The `%>%` is the pipe operator from magrittr; it helps to keep things organized, and is particularly useful with some of the things we'll see later. The 'similarity' scores here are cosine similarity in a vector space; 1.0 represents perfect similarity, 0 is no correlation, and -1.0 is complete opposition. In practice, vector "opposition" is different from the colloquial use of "opposite," and very rare. You'll only occasionally see vector scores below 0--as you can see above, "bad" is actually one of the most similar words to "good."
@@ -56,7 +56,7 @@ The `%>%` is the pipe operator from magrittr; it helps to keep things organized,
 When interactively exploring a single model (rather than comparing *two* models), it can be a pain to keep retyping words over and over. Rather than operate on the vectors, this package also lets you access the word directly by using R's formula notation: putting a tilde in front of it. For a single word, you can even access it directly, as so.
 
 ```{r}
-demo_vectors %>% nearest_to("bad")
+demo_vectors %>% closest_to("bad")
 ```
 
 ## Vector math
@@ -65,16 +65,16 @@ The tildes are necessary syntax where things get interesting--you can do **math*
 
 ```{r}
 
-demo_vectors %>% nearest_to(~"good"+"bad")
+demo_vectors %>% closest_to(~"good"+"bad")
 
 # The same thing could be written as:
-# demo_vectors %>% nearest_to(demo_vectors[["good"]]+demo_vectors[["bad"]])
+# demo_vectors %>% closest_to(demo_vectors[["good"]]+demo_vectors[["bad"]])
 ```
 
 Those are words that are common to both "good" and "bad". We could also find words that are shaded towards just good but *not* bad by using subtraction.
 
 ```{r}
-demo_vectors %>% nearest_to(~"good" - "bad")
+demo_vectors %>% closest_to(~"good" - "bad")
 ```
 
 > What does this "subtraction" vector mean? 
@@ -88,14 +88,14 @@ demo_vectors %>% nearest_to(~"good" - "bad")
 Again, you can easily switch the order to the opposite: here are a bunch of bad words:
 
 ```{r}
-demo_vectors %>% nearest_to(~ "bad" - "good")
+demo_vectors %>% closest_to(~ "bad" - "good")
 ```
 
 All sorts of binaries are captured in word2vec models. One of the most famous, since Mikolov's original word2vec paper, is *gender*. If you ask for similarity to "he"-"she", for example, you get words that appear mostly in a *male* context. Since these examples are from teaching evaluations, after just a few straightforwardly gendered words, we start to get things that only men are ("arrogant") or where there are very few women in the university ("physics")
 
 ```{r}
-demo_vectors %>% nearest_to(~ "he" - "she")
-demo_vectors %>% nearest_to(~ "she" - "he")
+demo_vectors %>% closest_to(~ "he" - "she")
+demo_vectors %>% closest_to(~ "she" - "he")
 ```
 
 ## Analogies
@@ -112,7 +112,7 @@ removing its similarity to "he", and additing a similarity to "she".
 This yields the answer: the most similar term to "guy" for a woman is "lady."
 
 ```{r}
-demo_vectors %>% nearest_to(~ "guy" - "he" + "she")
+demo_vectors %>% closest_to(~ "guy" - "he" + "she")
 ```
 
 If you're using the other mental framework, of thinking of these as real vectors, 
@@ -122,7 +122,7 @@ to femininity. You can then add this vector to "guy", and that will take you to 
 only the grouping is different.
 
 ```{r}
-demo_vectors %>% nearest_to(~ "guy" + ("she" - "he"))
+demo_vectors %>% closest_to(~ "guy" + ("she" - "he"))
 ```
 
 Principal components can let you plot a subset of these vectors to see how they relate. You can imagine an arrow from "he" to "she", from "guy" to "lady", and from "man" to "woman"; all run in roughly the same direction.
@@ -140,13 +140,13 @@ First we build up three data_frames: first, a list of the 50 top evaluative word
 
 ```{r}
 top_evaluative_words = demo_vectors %>% 
-   nearest_to(~ "good"+"bad",n=75)
+   closest_to(~ "good"+"bad",n=75)
 
 goodness = demo_vectors %>% 
-  nearest_to(~ "good"-"bad",n=Inf) 
+  closest_to(~ "good"-"bad",n=Inf) 
 
 femininity = demo_vectors %>% 
-  nearest_to(~ "she" - "he", n=Inf)
+  closest_to(~ "she" - "he", n=Inf)
 ```
 
 Then we can use tidyverse packages to join and plot these.

@@ -86,14 +86,14 @@ Now we have a model in memory, trained on about 10 million words from 77 cookboo
 Well, you can run some basic operations to find the nearest elements:
 
 ```{r}
-model %>% nearest_to("fish")
+model %>% closest_to("fish")
 ```
 
 With that list, you can expand out further to search for multiple words:
 
 ```{r}
 model %>% 
-  nearest_to(model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],50)
+  closest_to(model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],50)
 ```
 
 Now we have a pretty expansive list of potential fish-related words from old cookbooks. This can be useful for a few different things:
@@ -105,7 +105,7 @@ Now we have a pretty expansive list of potential fish-related words from old coo
 Or we can just arrange them somehow. In this case, it doesn't look like much of anything.
 
 ```{r}
-some_fish = nearest_to(model,model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],150)
+some_fish = closest_to(model,model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],150)
 fishy = model[[some_fish$word,average=F]]
 plot(fishy,method="pca")
 ```
@@ -137,7 +137,7 @@ the 20 words closest to each of four different kinds of words.
 ingredients = c("madeira","beef","saucepan","carrots")
 term_set = lapply(ingredients, 
        function(ingredient) {
-          nearest_words = model %>% nearest_to(model[[ingredient]],20)
+          nearest_words = model %>% closest_to(model[[ingredient]],20)
           nearest_words$word
         }) %>% unlist
 

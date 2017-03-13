@@ -26,9 +26,9 @@ Calculate the cosine similarity of two matrices or a matrix and a vector.
 subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=FALSE]]
 similarities = cosineSimilarity(subjects,subjects)
 
-# Use 'nearest_to' to build up a large list of similar words to a seed set.
+# Use 'closest_to' to build up a large list of similar words to a seed set.
 subjects = demo_vectors[[c("history","literature","biology","math","stats"),average=TRUE]]
-new_subject_list = nearest_to(demo_vectors,subjects,20)
+new_subject_list = closest_to(demo_vectors,subjects,20)
 new_subjects = demo_vectors[[new_subject_list$word,average=FALSE]]
 
 # Plot the cosineDistance of these as a dendrogram.

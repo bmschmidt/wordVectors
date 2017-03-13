@@ -26,14 +26,14 @@ if (!file.exists("cookbook_vectors.bin")) {model = train_word2vec("cookbooks.txt
 
 
 ## ------------------------------------------------------------------------
-model %>% nearest_to("fish")
+model %>% closest_to("fish")
 
 ## ------------------------------------------------------------------------
 model %>% 
-  nearest_to(model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],50)
+  closest_to(model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],50)
 
 ## ------------------------------------------------------------------------
-some_fish = nearest_to(model,model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],150)
+some_fish = closest_to(model,model[[c("fish","salmon","trout","shad","flounder","carp","roe","eels")]],150)
 fishy = model[[some_fish$word,average=F]]
 plot(fishy,method="pca")
 
@@ -51,7 +51,7 @@ sapply(sample(1:centers,10),function(n) {
 ingredients = c("madeira","beef","saucepan","carrots")
 term_set = lapply(ingredients, 
        function(ingredient) {
-          nearest_words = model %>% nearest_to(model[[ingredient]],20)
+          nearest_words = model %>% closest_to(model[[ingredient]],20)
           nearest_words$word
         }) %>% unlist
 

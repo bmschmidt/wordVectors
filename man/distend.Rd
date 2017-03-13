@@ -31,11 +31,11 @@ eliminating a vector entirely. Values less than zero will do some type of mirror
 universe thing, but probably aren't useful?
 }
 \examples{
-nearest_to(demo_vectors,"sweet")
+closest_to(demo_vectors,"sweet")
 
 # Stretch out the vectorspace 4x longer along the gender direction.
 more_sexist = distend(demo_vectors, ~ "man" + "he" - "she" -"woman", 4)
 
-nearest_to(more_sexist,"sweet")
+closest_to(more_sexist,"sweet")
 
 }
