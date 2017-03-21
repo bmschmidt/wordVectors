@@ -1,6 +1,8 @@
 # Word Vectors
 
-[![Build Status](https://travis-ci.org/bmschmidt/wordVectors.svg?branch=master)](https://travis-ci.org/bmschmidt/wordVectors)
+[![Travis Build Status](https://travis-ci.org/bmschmidt/wordVectors.svg?branch=master)](https://travis-ci.org/bmschmidt/wordVectors)
+
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/NA/NA?branch=master&svg=true)](https://ci.appveyor.com/project/bmschmidt/wordVectors)
 
 An R package for building and exploring word embedding models.
 
