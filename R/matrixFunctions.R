@@ -683,7 +683,7 @@ reject = function(matrix,vector) {
 #' @export
 distend = function(matrix,vector, multiplier) {
   parallel_track = project(matrix,vector)
-  return(methods::new("VectorSpaceModel",matrix - parallel_track*(multiplier-1)))
+  return(methods::new("VectorSpaceModel",matrix + parallel_track*(multiplier-1)))
 }
 
 #' Return the n closest words in a VectorSpaceModel to a given vector.
