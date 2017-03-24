@@ -1,3 +1,34 @@
+#' Extract vectors or formulas from a VectorSpaceModel.
+#' 
+#' @param vsm A VectorSpaceModel or matrix
+#' @param ... Words or formulas to extract from. Alternatively, a single list
+#' of formulas.
+#'
+#' @return A Vector space model
+#' @export
+#'
+#' @examples
+#' 
+#' demo_vectors %>% 
+#'   extract_vectors("lady","woman","man","he","she","guy","man")
+#'   
+extract_vectors = function(vsm, ...) {
+  targets = list(...)
+  if (is.list(targets[[1]])) {
+    targets = targets[[1]]
+    names = as.vector(lapply(targets,deparse))
+  } else {
+    names = substitute(list(...))[-1]  
+  }
+  
+  newspace = vapply(targets,function(form) {
+    wordVectors:::sub_out_formula(form,vsm)
+  },as.vector(vsm[1,])) %>% t %>% new("VectorSpaceModel",.)
+  rownames(newspace) = gsub('[~"]',"",names)
+  newspace
+}
+
+
 #' Improve a vectorspace by removing common elements.
 #'
 #'
@@ -11,7 +42,7 @@
 #' @export
 #'
 #' @examples
-#'
+#'cosin
 #' closest_to(demo_vectors,"great")
 #' # stopwords like "and" and "very" are no longer top ten.
 #' # I don't know if this is really better, though.
@@ -60,10 +91,12 @@ sub_out_tree = function(tree, context) {
     }
   }
   if (is.character(tree)) {
-    return(context[[tree]])
+    return(context[rownames(context)==tree,])
   }
   return(tree)
 }
+
+
 
 #' Internal function to wrap for sub_out_tree. Allows arithmetic on words.
 #'
@@ -85,7 +118,7 @@ sub_out_formula = function(formula,context) {
     formula[[2]] <- sub_out_tree(formula[[2]],context)
     return(eval(formula[[2]]))
   }
-  if (is.character(formula)) {return(context[[formula]])}
+  if (is.character(formula)) {return(context[rownames(context)==formula,])}
   return(formula)
 }
 
@@ -95,16 +128,13 @@ sub_out_formula = function(formula,context) {
 #' The base object is simply a matrix with columns describing dimensions and unique rownames
 #' as the names of vectors. This package gives a number of convenience functions for printing
 #' and, most importantly, accessing these objects.
-#' @slot magnitudes The cached sum-of-squares for each row in the matrix. Can be cached to
-#' speed up similarity calculations
+#' @slot .cache A cache that, after some calculations, will include the sum-of-squares for each row in the matrix.
 #' @return An object of class "VectorSpaceModel"
 #' @exportClass VectorSpaceModel
 setClass("VectorSpaceModel",slots = c(".cache"="environment"),contains="matrix")
-#setClass("NormalizedVectorSpaceModel",contains="VectorSpaceModel")
-
-# This is Steve Lianoglu's method for associating a cache with an object
-# http://r.789695.n4.nabble.com/Change-value-of-a-slot-of-an-S4-object-within-a-method-td2338484.html
 setMethod("initialize", "VectorSpaceModel",
+          # This is Steve Lianoglu's method for associating a cache with an object
+          # http://r.789695.n4.nabble.com/Change-value-of-a-slot-of-an-S4-object-within-a-method-td2338484.html
           function(.Object, ..., .cache=new.env()) {
             methods::callNextMethod(.Object, .cache=.cache, ...)
           })
@@ -133,7 +163,6 @@ square_magnitudes = function(object) {
     return(rowSums(object^2))
   }
 }
-
 
 #' VectorSpaceModel indexing
 #'
@@ -227,6 +256,7 @@ setMethod("[[","VectorSpaceModel",function(x,i,average=TRUE) {
   }
 })
 
+
 setMethod("show","VectorSpaceModel",function(object) {
   dims = dim(object)
   cat("A VectorSpaceModel object of ",dims[1]," words and ", dims[2], " vectors\n")
@@ -251,7 +281,7 @@ setMethod("show","VectorSpaceModel",function(object) {
 #'
 #' @return The TSNE model (silently.)
 #' @export
-setMethod("plot","VectorSpaceModel",function(x,method="tsne",...) {
+setMethod("plot","VectorSpaceModel",function(x,method="pca",...) {
   if (method=="tsne") {
     message("Attempting to use T-SNE to plot the vector representation")
     message("Cancel if this is taking too long")
@@ -264,7 +294,7 @@ setMethod("plot","VectorSpaceModel",function(x,method="tsne",...) {
     rownames(m)=rownames(short)
     silent = m
   } else if (method=="pca") {
-    vectors = stats::predict(stats::prcomp(x))[,1:2]
+    vectors = stats::predict(stats::prcomp({x %>% normalize_lengths()}@.Data))[,1:2]
     graphics::plot(vectors,type='n')
     graphics::text(vectors,labels=rownames(vectors))
   }
@@ -296,31 +326,34 @@ as.VectorSpaceModel = function(matrix) {
 #' @export
 #' @return An matrixlike object of class `VectorSpaceModel`
 #'
-read.vectors <- function(filename,vectors=guess_n_cols(),binary=NULL,...) {
-  if(rev(strsplit(filename,"\\.")[[1]])[1] =="bin" && is.null(binary)) {
-    message("Filename ends with .bin, so reading in binary format")
-    binary=TRUE
-  }
+read.vectors <- function(filename,vectors=NULL,binary=NULL,...) {
+    if (is.null(binary)) {
+        if(rev(strsplit(filename,"\\.")[[1]])[1] =="bin") {
+            message("Filename ends with .bin, so reading in binary format")
+            binary=TRUE
+        } else {
+            binary=FALSE
+            message("Reading in plain-text format.")
+        }
+    }
+  
 
   if(binary) {
     return(read.binary.vectors(filename,...))
   }
-
-  # Figure out how many dimensions.
-  guess_n_cols = function() {
-    # if cols is not defined
-    test = utils::read.table(filename,header=F,skip=1,
-                       nrows=1,quote="",comment.char="")
-  return(ncol(test)-1)
+  readr_wrapr = function(fin,nrows=Inf, ...) {
+    options(readr.num_columns = 0)
+    guess = readr::spec_delim(fin, delim = " ", skip = 1, guess_max = 20, col_names=FALSE, n_max = 10, escape_backslash = FALSE, quote="", comment="")
+    names(guess$cols) = c("word", paste0("V", 1:(length(guess$cols)-1)))
+    readr::read_delim(fin,
+                      skip=1,n_max=nrows,quote="",escape_backslash = FALSE,
+                      escape_double = FALSE,comment = "", delim = " ", 
+                      col_types = guess, col_names = names(guess$cols))
   }
-  vectors_matrix = utils::read.table(filename,header=F,skip=1,
-                               colClasses = c("character",rep("numeric",vectors)),
-                       quote="",comment.char="",...)
-  names(vectors_matrix)[1] = "word"
+  vectors_matrix = readr_wrapr(filename,...)
   vectors_matrix$word[is.na(vectors_matrix$word)] = "NA"
-  matrix = as.matrix(vectors_matrix[,colnames(vectors_matrix)!="word"])
+  matrix = as.matrix(vectors_matrix[,-1])
   rownames(matrix) = vectors_matrix$word
-  colnames(matrix) = paste0("V",1:vectors)
   return(methods::new("VectorSpaceModel",matrix))
 }
 
@@ -563,7 +596,7 @@ cosineSimilarity <- function(x,y) {
     x = as.matrix(x,ncol=ncol(y))
   }
   if (is.vector(y)) {
-    y = as.matrix(y,ncol=ncol(x))
+    y = matrix(y,ncol=ncol(x))
   }
 
   # Using tcrossprod should be faster than transposing manually.
@@ -689,12 +722,11 @@ distend = function(matrix,vector, multiplier) {
 #' Return the n closest words in a VectorSpaceModel to a given vector.
 #'
 #' @param matrix A matrix or VectorSpaceModel
-#' @param vector  A vector (or a string or a formula coercable to a vector)
-#' of the same length as the VectorSpaceModel. See below.
+#' @param vector  A single vector
+#' of the same length as the VectorSpaceModel, or a string or a formula coercable to a vector in
+#' the context of the passed matrix. Alternatively, a list of vectors. 
 #' @param n The number of closest words to include.
-#' @param fancy_names If true (the default) the data frame will have descriptive names like
-#' 'similarity to "king+queen-man"'; otherwise, just 'similarity.' The default can speed up
-#'  interactive exploration.
+#' @param merge.method 
 #'
 #' @return A sorted data.frame with columns for the words and their similarity
 #' to the target vector. (Or, if as_df==FALSE, a named vector of similarities.)
@@ -734,26 +766,52 @@ distend = function(matrix,vector, multiplier) {
 #'
 #' closest_to(demo_vectors,~ "guy" - "man" + "woman")
 #'
+#' # Multiple arguments can be merged together to get the ten closest 
+#' # to either word 
+#' closest_to(demo_vectors,")
+#'
 #' @export
-closest_to = function(matrix, vector, n=10, fancy_names = TRUE) {
-  label = deparse(substitute(vector),width.cutoff=500)
-  if (substr(label,1,1)=="~") {label = substr(label,2,500)}
-
+closest_to = function(matrix, vector, n=10, merge.method="any") {
+  if (!is.numeric(vector)) {
+    if (is.character(vector)) vector = as.list(vector) # 
+    if (!is.list(vector)) vector = list(vector) # for single-length arguments (most common case)
+    comp = matrix %>% extract_vectors(vector)
+  } else {
+    comp = vector
+  }
   # The actually wrapping.
-  sims = cosineSimilarity(matrix,vector)
+  sims = cosineSimilarity(matrix,comp)
 
   # Top n shouldn't be greater than the vocab length.
-  n = min(n,length(sims))
+  n = min(n,nrow(sims))
 
   # For sorting.
-  ords = order(-sims[,1])
-
-  return_val = data.frame(rownames(sims)[ords[1:n]], sims[ords[1:n]],stringsAsFactors=FALSE)
-  if (fancy_names) {
-    names(return_val) = c("word", paste("similarity to", label))
-  } else {
-    names(return_val) = c("word","similarity")
+  ranks = apply(-sims,2,rank)
+  if (merge.method=="none") {
+    return_val = apply(sims,2,function(col) {
+      o = order(-col);
+      data.frame(word = names(col)[o[1:n]], similarity=col[o[1:n]],stringsAsFactors=FALSE)
+                 }) %>% 
+      do.call(rbind,.)
+    return_val$comparison = gsub('"',"", rep(colnames(sims),each=n))
+    rownames(return_val) = NULL
+    return(return_val)
   }
+  
+  if (merge.method=="any") f = min
+  if (merge.method=="all") f = max
+  if (merge.method=="average") f = mean
+  scores = apply(ranks,1,f)
+  keeping = which(scores <= n)
+  kept = sims[keeping,,drop=FALSE]
+  return_val = data.frame(word = rownames(kept),
+             similarity=as.vector(kept),
+             stringsAsFactors = FALSE)
+  if (nrow(comp) > 1)
+    return_val$comparison = gsub('"',"", rep(colnames(kept),each=nrow(kept)))
+
+  
+  return_val = return_val[order(-return_val$similarity),]
   rownames(return_val) = NULL
   return_val
 }
@@ -777,7 +835,7 @@ closest_to = function(matrix, vector, n=10, fancy_names = TRUE) {
 #' demo_vectors %>% closest_to("good")
 #'
 nearest_to = function(...) {
-  vals = closest_to(...,fancy_names = F)
+  vals = closest_to(...)
   returnable = 1 - vals$similarity
   names(returnable) = vals$word
   returnable

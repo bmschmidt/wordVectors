@@ -129,7 +129,7 @@ Principal components can let you plot a subset of these vectors to see how they 
 
 ```{r}
 
-demo_vectors[[c("lady","woman","man","he","she","guy","man"), average=F]] %>% 
+demo_vectors %>% extract_vectors("lady","woman","man","he","she","guy","man") %>% 
   plot(method="pca")
 
 ```
