@@ -21,3 +21,4 @@ tests/testthat/tmp.bin
 vignettes/*.R
 vignettes/*.html
 vignettes/*_files
+wordVectors.Rproj
