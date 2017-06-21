@@ -4,7 +4,7 @@
 \alias{read.vectors}
 \title{Read VectorSpaceModel}
 \usage{
-read.vectors(filename, vectors = guess_n_cols(), binary = NULL, ...)
+read.vectors(filename, vectors = NULL, binary = NULL, ...)
 }
 \arguments{
 \item{filename}{The file to read in.}

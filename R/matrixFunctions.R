@@ -5,6 +5,7 @@
 #' of formulas.
 #'
 #' @return A Vector space model
+#
 #' @export
 #'
 #' @examples
@@ -14,7 +15,7 @@
 #'   
 extract_vectors = function(vsm, ...) {
   targets = list(...)
-  if (is.list(targets[[1]])) {
+  if (is.list(targets[[1]]) || (is.character(targets[[1]]) && length(targets[[1]]) > 1)) {
     targets = targets[[1]]
     names = as.vector(lapply(targets,deparse))
   } else {
@@ -22,9 +23,9 @@ extract_vectors = function(vsm, ...) {
   }
   
   newspace = vapply(targets,function(form) {
-    wordVectors:::sub_out_formula(form,vsm)
-  },as.vector(vsm[1,])) %>% t %>% new("VectorSpaceModel",.)
-  rownames(newspace) = gsub('[~"]',"",names)
+    sub_out_formula(form,vsm)
+  },as.vector(vsm[1,])) %>% t %>% methods::new("VectorSpaceModel",.)
+  rownames(newspace) = gsub('[~"]',"",names,perl=TRUE)
   newspace
 }
 
@@ -42,7 +43,6 @@ extract_vectors = function(vsm, ...) {
 #' @export
 #'
 #' @examples
-#'cosin
 #' closest_to(demo_vectors,"great")
 #' # stopwords like "and" and "very" are no longer top ten.
 #' # I don't know if this is really better, though.
@@ -262,6 +262,7 @@ setMethod("show","VectorSpaceModel",function(object) {
   cat("A VectorSpaceModel object of ",dims[1]," words and ", dims[2], " vectors\n")
   methods::show(unclass(object[1:min(nrow(object),10),1:min(ncol(object),6),drop=F]))
 })
+
 
 #' Plot a Vector Space Model.
 #'
@@ -726,7 +727,13 @@ distend = function(matrix,vector, multiplier) {
 #' of the same length as the VectorSpaceModel, or a string or a formula coercable to a vector in
 #' the context of the passed matrix. Alternatively, a list of vectors. 
 #' @param n The number of closest words to include.
-#' @param merge.method 
+#' @param merge.method If multiple vectors are passed, how to interpret the top-n threshold to ensure
+#' all relevant words are returned.
+#' "none" means just the top n for each word; "any" means return all similarities
+#' for words that are within n of any term; 
+#' "all" means return all similarities for words that are within n of all search terms;
+#' "average" means return all similarities for terms that
+#' average a score of n or less.
 #'
 #' @return A sorted data.frame with columns for the words and their similarity
 #' to the target vector. (Or, if as_df==FALSE, a named vector of similarities.)
@@ -768,7 +775,7 @@ distend = function(matrix,vector, multiplier) {
 #'
 #' # Multiple arguments can be merged together to get the ten closest 
 #' # to either word 
-#' closest_to(demo_vectors,")
+#' closest_to(demo_vectors,c("great","good"))
 #'
 #' @export
 closest_to = function(matrix, vector, n=10, merge.method="any") {

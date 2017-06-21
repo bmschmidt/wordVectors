@@ -4,19 +4,18 @@
 \alias{closest_to}
 \title{Return the n closest words in a VectorSpaceModel to a given vector.}
 \usage{
-closest_to(matrix, vector, n = 10, fancy_names = TRUE)
+closest_to(matrix, vector, n = 10, merge.method = "any")
 }
 \arguments{
 \item{matrix}{A matrix or VectorSpaceModel}
 
-\item{vector}{A vector (or a string or a formula coercable to a vector)
-of the same length as the VectorSpaceModel. See below.}
+\item{vector}{A single vector
+of the same length as the VectorSpaceModel, or a string or a formula coercable to a vector in
+the context of the passed matrix. Alternatively, a list of vectors.}
 
 \item{n}{The number of closest words to include.}
 
-\item{fancy_names}{If true (the default) the data frame will have descriptive names like
-'similarity to "king+queen-man"'; otherwise, just 'similarity.' The default can speed up
- interactive exploration.}
+\item{merge.method}{}
 }
 \value{
 A sorted data.frame with columns for the words and their similarity
@@ -57,5 +56,9 @@ closest_to(demo_vectors,"good")
 # a male one?
 
 closest_to(demo_vectors,~ "guy" - "man" + "woman")
+
+# Multiple arguments can be merged together to get the ten closest 
+# to either word 
+closest_to(demo_vectors,c("great","good"))
 
 }

@@ -18,7 +18,7 @@ A VectorSpaceModel object, transformed from the original.
 See reference for a full description. Supposedly, these operations will improve performance on analogy tasks.
 }
 \examples{
-
+cosin
 closest_to(demo_vectors,"great")
 # stopwords like "and" and "very" are no longer top ten.
 # I don't know if this is really better, though.
