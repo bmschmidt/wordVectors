@@ -517,7 +517,8 @@ read.binary.vectors = function(filename,nrows=Inf,cols="All", rowname_list = NUL
   }
 
   read_row = function(i) {
-    utils::setTxtProgressBar(pb,i)
+    if (interactive())
+      utils::setTxtProgressBar(pb,i)
     rowname=""
     mostRecent=""
     while(TRUE) {

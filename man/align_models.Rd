@@ -2,7 +2,7 @@
 % Please edit documentation in R/alignment.R
 \name{align_models}
 \alias{align_models}
-\title{Title Align models.}
+\title{Align models.}
 \usage{
 align_models(..., shared_vocab_only = TRUE)
 }
@@ -19,7 +19,7 @@ A list of VectorSpaceModel objects. Each is rotated into the space defined by th
 and altered so that each vector is of unit length.
 }
 \description{
-Title Align models.
+Align models.
 }
 \examples{
 

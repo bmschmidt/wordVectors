@@ -90,7 +90,7 @@ stanford_plot = function(model_set, word, n=20, transform_type = c("mds","pca"))
   if (!requireNamespace("ggplot2")) {stop("You need ggplot for this function: run 'install.packages(ggplot2)'")}
   model_set = Filter(function(model) {length(intersect(word,rownames(model))) > 0}, model_set)
   small_list = lapply(model_set, function(model) {
-    model %>% closest_to(model[[word]],n,fancy_names=F)
+    model %>% closest_to(model[[word]],n)
   }) %>% bind_rows %>% select(word) %>% unlist %>% unique
 
   just_this_word = lapply(model_set, function(mat) {
@@ -142,7 +142,7 @@ stanford_plot = function(model_set, word, n=20, transform_type = c("mds","pca"))
               aes(group=base_word),col='red',arrow = grid::arrow())
 }
 
-#' Title Align models.
+#' Align models.
 #'
 #' @param ... A number of VectorSpaceModels to align as independent entries;
 #' or, alternatively, a single list
