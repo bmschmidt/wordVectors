@@ -5,7 +5,7 @@
 \alias{plot,VectorSpaceModel-method}
 \title{Plot a Vector Space Model.}
 \usage{
-\S4method{plot}{VectorSpaceModel}(x, method = "tsne", ...)
+\S4method{plot}{VectorSpaceModel}(x, method = "pca", ...)
 }
 \arguments{
 \item{x}{The model to plot}

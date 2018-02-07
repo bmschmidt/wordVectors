@@ -4,19 +4,24 @@
 \alias{closest_to}
 \title{Return the n closest words in a VectorSpaceModel to a given vector.}
 \usage{
-closest_to(matrix, vector, n = 10, fancy_names = TRUE)
+closest_to(matrix, vector, n = 10, merge.method = "none", labels = NULL)
 }
 \arguments{
 \item{matrix}{A matrix or VectorSpaceModel}
 
-\item{vector}{A vector (or a string or a formula coercable to a vector)
-of the same length as the VectorSpaceModel. See below.}
+\item{vector}{A single vector
+of the same length as the VectorSpaceModel, or a string or a formula coercable to a vector in
+the context of the passed matrix. Alternatively, a list of vectors.}
 
 \item{n}{The number of closest words to include.}
 
-\item{fancy_names}{If true (the default) the data frame will have descriptive names like
-'similarity to "king+queen-man"'; otherwise, just 'similarity.' The default can speed up
- interactive exploration.}
+\item{merge.method}{If you ask for the top n words across multiple `vector` arguments, what does that mean?
+NULL means just use the top n for each requested vector; "magnitude" means use the L2 norm
+to get n words that have the largest total positive or negative similarity;
+"all" means use words that are in the top n for all the input vectors; "any"
+means use words that are in the top n for any of the input vectors.}
+
+\item{labels}{A vector of characters for identifying comparisons. Useful if passing multiple numeric arguments.}
 }
 \value{
 A sorted data.frame with columns for the words and their similarity
@@ -38,7 +43,6 @@ a formula, any strings in the formula will be converted to rows in the associate
 before any math happens.
 }
 \examples{
-
 # Synonyms and similar words
 closest_to(demo_vectors,demo_vectors[["good"]])
 
@@ -50,12 +54,16 @@ closest_to(demo_vectors,"good")
 
 # You can also express more complicated formulas.
 
-closest_to(demo_vectors,"good")
+closest_to(demo_vectors,~ "math" + "physics")
 
 # Something close to the classic king:man::queen:woman;
 # What's the equivalent word for a female teacher that "guy" is for
 # a male one?
 
 closest_to(demo_vectors,~ "guy" - "man" + "woman")
+
+# Multiple arguments can be merged together to get the ten closest
+# to either word
+closest_to(demo_vectors,vector = list("good","bad"))
 
 }

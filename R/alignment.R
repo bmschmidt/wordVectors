@@ -35,12 +35,15 @@ procrustes = function(x, y) {
   reorder_rows = function(matrix,lookup=shared_vocab) matrix[match(lookup,rownames(matrix)),]
 
   # A few extra copies produces shorter code.
-  shared_vocab = intersect(rownames(x),rownames(y))
-  x_ = reorder_rows(x,shared_vocab)
-  y_ = reorder_rows(y,shared_vocab)
+  if (rownames(x) != rownames(y)) {
+    shared_vocab = intersect(rownames(x),rownames(y))
+    x_ = reorder_rows(x,shared_vocab)
+    y_ = reorder_rows(y,shared_vocab)
 
-  XY = crossprod(x_,y_)
-
+    XY = crossprod(x_,y_)
+  } else {
+    XY = crossprod(x,y)
+  }
   sol = svd(XY)
   A = sol$v %*% t(sol$u)
   yRot <- y %*% A
@@ -54,11 +57,11 @@ procrustes = function(x, y) {
 # This is a rather complicated function to make a slopegraph: I may bundle it into the core package at some point.
 usage_slopegraph = function(vector, ..., n=10, label_function = function(...) ggrepel::geom_text_repel(..., direction="y")) {
   sets = list(...)
-  names = eval(substitute(alist(...))) %>% purrr::map(deparse) %>% unlist
+  names = eval(substitute(alist(...))) %>% purrr::map(deparse) %>6% unlist
   names(sets) = paste("set", 1:length(sets))
   groups = lapply(1:length(sets), function(name) {
     set = sets[[name]]
-    neighbors = nearest_to(set,vector,fancy_names=F,n=Inf)
+    neighbors = closest_to(set,vector,fancy_names=F,n=Inf)
     neighbors$rank = rank(-neighbors$similarity)
     names(neighbors) = c("word",name,paste0("rank-",name))
     neighbors %>% as.tbl
@@ -83,11 +86,11 @@ usage_slopegraph = function(vector, ..., n=10, label_function = function(...) gg
 
 
 stanford_plot = function(model_set, word, n=20, transform_type = c("mds","pca")) {
-
+  library(ggplot2)
   if (!requireNamespace("ggplot2")) {stop("You need ggplot for this function: run 'install.packages(ggplot2)'")}
   model_set = Filter(function(model) {length(intersect(word,rownames(model))) > 0}, model_set)
   small_list = lapply(model_set, function(model) {
-    model %>% nearest_to(model[[word]],n,fancy_names=F)
+    model %>% closest_to(model[[word]],n,fancy_names=F)
   }) %>% bind_rows %>% select(word) %>% unlist %>% unique
 
   just_this_word = lapply(model_set, function(mat) {
@@ -152,8 +155,12 @@ stanford_plot = function(model_set, word, n=20, transform_type = c("mds","pca"))
 #' @export
 #'
 #' @examples
+#'
+#' \dontrun{models = align_models(m1, m2, m3)
+#' models[[1]] %>% closest_to(models[[2]][["good"]])
+#' }
+#'
 align_models = function(..., shared_vocab_only = TRUE) {
-  # shared_vocab_only (unimplemented) is whether to allow more complicated
 
   # ... are models to be aligned.
   # alternatively, it can be a single *list* of models.
@@ -193,10 +200,16 @@ align_models = function(..., shared_vocab_only = TRUE) {
 #' @param filenames A list of filenames naming VectorSpaceModels.
 #' @param ... Additional parameters passed to read_vectors
 #'
-#' @return
+#' @return A lisit of VectorSpaceModel objects
 #' @export
 #'
 #' @examples
+#'
+#' \dontrun{
+#' group = read_group(c("model1.bin", "model2.bin", "model3.bin"))
+#' aligned = align_models(group)
+#' }
+#'
 read_group = function(filenames,...) {
   # Additional parameters passed to read.vectors
   models = lapply(filenames, function(filename) {

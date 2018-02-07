@@ -16,7 +16,6 @@ and, most importantly, accessing these objects.
 \section{Slots}{
 
 \describe{
-\item{\code{magnitudes}}{The cached sum-of-squares for each row in the matrix. Can be cached to
-speed up similarity calculations}
+\item{\code{.cache}}{A cache that, after some calculations, will include the sum-of-squares for each row in the matrix.}
 }}
 

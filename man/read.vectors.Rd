@@ -4,7 +4,8 @@
 \alias{read.vectors}
 \title{Read VectorSpaceModel}
 \usage{
-read.vectors(filename, vectors = guess_n_cols(), binary = NULL, ...)
+read.vectors(filename, vectors = NULL, binary = NULL, header_row = TRUE,
+  ...)
 }
 \arguments{
 \item{filename}{The file to read in.}
@@ -13,6 +14,9 @@ read.vectors(filename, vectors = guess_n_cols(), binary = NULL, ...)
 
 \item{binary}{Read in the binary word2vec form. (Wraps `read.binary.vectors`) By default, function
 guesses based on file suffix.}
+
+\item{header_row}{Whether the first row of the file gives information about the rest. If FALSE,
+the number of dimensions is inferred from the first row. Useful in reading gloVe files.}
 
 \item{...}{Further arguments passed to read.table or read.binary.vectors.
 Note that both accept 'nrows' as an argument. Word2vec produces

@@ -46,8 +46,8 @@ We can compare similarities between these models without aligning them by just l
 ```
 
 ``` {r}
+
 plot = with(models, usage_slopegraph("Germany", `All_1923-1945`, `All_1945-1968`))
-plot$data$lab1 = paste(plot$data$lab1,"      ")
 plot
 ```
 
@@ -82,7 +82,7 @@ foo
 Or take "immigration", which over this same horizon moves into the neighbor of "refugees" and away from talk of "aliens."
 
 ``` {r}
-with(models, usage_slopegraph("immigration", `All_1923-1945`, `All_1945-1968`))
+with(models, usage_slopegraph("immigration", `All_1923-1945`, `All_1985-2010`))
 ```
 
 These lists of words don't capture the underlying directions of movement, however. Suppose we want to ask "what words are similar to the vector along which Germany shifts?" 
@@ -97,7 +97,7 @@ aligned = align_models(models,shared_vocab_only = FALSE)
 ```{r}
 changes_around_the_war = with(aligned,`All_1945-1968` - `All_1923-1945`)
 
-changes_around_the_war %>% nearest_to(~-"science")
+changes_around_the_war %>% nearest_to(~"science")
 
 german_change = with(aligned, `All_1945-1968`[["Germany"]] - `All_1923-1945`[["Germany"]])
 
@@ -105,7 +105,9 @@ aligned[["All_1923-1945"]] %>% nearest_to(german_change)
 
 ```
 
-stanford_plot(aligned, word = c("freedom","liberty"), 15, transform_type = "pca")
+```{r}
+stanford_plot(aligned, word = c("war"), 15, transform_type = "pca")
+with(aligned, `All_1968-1985` %>% closest_to("homosexual",25))
 ```
 
 ```{r}
@@ -120,23 +122,21 @@ last %>% nearest_to(~ -("freedom" - "liberty"), 50)
 ```
 
 ```{r}
-
-
 stanford_plot(aligned, word = c("political"), 15, transform_type = "mds")
 ```
 
 ```{r}
-stanford_plot(aligned, word = c("Rome"), 10, transform_type = "mds") + theme_bw()
+stanford_plot(aligned, word = c("Rome"), 20, transform_type = "pca") + theme_bw()
 ```
 
 A good one. The shift towards the modern sciences--especially the *social* sciences--is pronounced, but the entombment of science in the *university* is a later development.
 
 ```{r}
-stanford_plot(aligned, word = c("science","sciences"), 15, transform_type = "mds") + theme_bw()
+stanford_plot(aligned, word = c("physics","chemistry"), 15, transform_type = "pca") + theme_bw()
 ```
 
 ```{r}
-stanford_plot(aligned, word = c("Russia"), 10, transform_type = "mds")
+stanford_plot(aligned, word = c("Russia"), 10, transform_type = "pca")
 ```
 
 
@@ -171,8 +171,6 @@ multi_set = aligned %>% do.call(cbind,.) %>% new("VectorSpaceModel",.)
 
 new("VectorSpaceModel",multi_set[,400:500]) %>% nearest_to("freedom")
 
-
-
 aligned[[6]] %>% nearest_to("freedom")
 
 ```
@@ -185,7 +183,10 @@ distmat = sapply(1:length(aligned),function(i) {
 })
 
 sort(-apply(distmat,1,mean))[1:100]
+```
 
+
+```{r}
 stanford_plot(aligned,"liberty")
 
 stanford_plot(aligned, word = c("tyranny"), 15, transform_type = "mds")
@@ -193,7 +194,7 @@ stanford_plot(aligned, word = c("tyranny"), 15, transform_type = "mds")
 #Communism becomes taken *seriously*.
 stanford_plot(aligned, word = c("communism"), 15, transform_type = "pca")
 
-stanford_plot(aligned, word = c("english"), 15, transform_type = "pca")
+stanford_plot(aligned, word = c("English"), 15, transform_type = "pca")
 
 stanford_plot(aligned, word = c("empire"), 15, transform_type = "pca")
 
@@ -206,4 +207,9 @@ stanford_plot(aligned, word = c("empire"), 15, transform_type = "pca")
 
 stanford_plot(aligned, word = c("king","queen"), 15, transform_type = "pca")
 
+```
+
+
+```{r}
+stanford_plot(aligned, word = c("America"), 15, transform_type = "pca")
 ```

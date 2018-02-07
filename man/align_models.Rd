@@ -21,3 +21,10 @@ and altered so that each vector is of unit length.
 \description{
 Title Align models.
 }
+\examples{
+
+\dontrun{models = align_models(m1, m2, m3)
+models[[1]] \%>\% closest_to(models[[2]][["good"]])
+}
+
+}

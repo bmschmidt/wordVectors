@@ -14,7 +14,7 @@ test_that("Distance is between 0 and 2 (pt 1)",
           )
 )
 
-test_that("Distance is between 0 and 2 (pt 1)",
+test_that("Distance is between 0 and 2 (pt 2)",
           expect_lt(
             max(cosineDist(demo_vectors,demo_vectors)),
             2 + 1e-07)
@@ -32,8 +32,8 @@ test_that("Compatability maintained to v1.0",
           expect_null(dim(demo_vectors %>% nearest_to("good"))))
 
 
-test_that("Single args passed to nearest_to produce two columns",
-          expect_equal(2,ncol(demo_vectors %>% closest_to("good"))))
+test_that("Single args passed to nearest_to produce three columns",
+          expect_equal(3,ncol(demo_vectors %>% closest_to("good"))))
 
 test_that("list args passed to nearest_to produce two columns",
           expect_equal(3,ncol(demo_vectors %>% closest_to(c("good","bad")))))
@@ -46,4 +46,3 @@ test_that("list args passed to nearest_to produce two columns",
           )
 )
 
-          

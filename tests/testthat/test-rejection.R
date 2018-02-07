@@ -1,4 +1,4 @@
-context("Rejection Works")
+context("test-rejection: Rejection Works")
 
 test_that("Rejection works along gender binary",
           expect_gt(

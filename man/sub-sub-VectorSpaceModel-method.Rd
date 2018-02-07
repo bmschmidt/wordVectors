@@ -5,7 +5,7 @@
 \alias{[[,VectorSpaceModel-method}
 \title{VectorSpaceModel subsetting}
 \usage{
-\S4method{[[}{VectorSpaceModel}(x, i, average = TRUE)
+\S4method{[[}{VectorSpaceModel}(x, i, average = NULL)
 }
 \arguments{
 \item{x}{The object being subsetted.}

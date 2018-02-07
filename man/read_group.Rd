@@ -11,6 +11,17 @@ read_group(filenames, ...)
 
 \item{...}{Additional parameters passed to read_vectors}
 }
+\value{
+A lisit of VectorSpaceModel objects
+}
 \description{
 Read Group
+}
+\examples{
+
+\dontrun{
+group = read_group(c("model1.bin", "model2.bin", "model3.bin"))
+aligned = align_models(group)
+}
+
 }

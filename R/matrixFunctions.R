@@ -1,33 +1,95 @@
 #' Extract vectors or formulas from a VectorSpaceModel.
-#' 
+#'
 #' @param vsm A VectorSpaceModel or matrix
 #' @param ... Words or formulas to extract from. Alternatively, a single list
 #' of formulas.
-#'
-#' @return A Vector space model
+#' @param ... Optionally, slabels to use for the vector space model: a character vector the same length
+#' as vectors to extract. This may be useful in programming contexts.
+#' @return A Vector space model with the same number of rows as \code{...}
 #' @export
 #'
 #' @examples
-#' 
-#' demo_vectors %>% 
-#'   extract_vectors("lady","woman","man","he","she","guy","man")
-#'   
-extract_vectors = function(vsm, ...) {
+#'
+#' demo_vectors %>%
+#'   extract_vectors("woman","man", ~"man" + "woman",  ~"man" - "woman")
+#'
+extract_vectors = function(vsm, ..., labels = NULL) {
   targets = list(...)
   if (is.list(targets[[1]])) {
     targets = targets[[1]]
-    names = as.vector(lapply(targets,deparse))
+    if (is.null(labels)) {
+      labels = as.vector(lapply(targets,deparse))
+    }
   } else {
-    names = substitute(list(...))[-1]  
+    if (is.null(labels))
+      labels = substitute(list(...))[-1]
   }
-  
+
   newspace = vapply(targets,function(form) {
     wordVectors:::sub_out_formula(form,vsm)
-  },as.vector(vsm[1,])) %>% t %>% new("VectorSpaceModel",.)
-  rownames(newspace) = gsub('[~"]',"",names)
+  }, as.vector(vsm[1,]))
+
+  newspace = new("VectorSpaceModel", t(newspace))
+
+  rownames(newspace) = gsub('[~"]',"",labels)
+
   newspace
 }
 
+#' Extract a single vector from a list of pairs.
+#'
+#' @param matrix A `VectorSpaceModel` object.
+#' @param pairs A list of pairs of words contained in the vectorset.
+#' Each pair should be positioned on opposite ends of the vector
+#' For example, use
+#' \code{list(c("he","she"),c("man","woman"),c("him","her"))} to
+#' get a "gender vector" that may be slightly better than just the average
+#' of the three vectors.
+#'
+#' @return A vector of the same dimensionality as matrix. It will point,
+#' on average, from the first element in each pair to the second.
+#'
+#' @export
+#'
+#' @examples
+#'
+#' gender = demo_vectors %>%
+#'    extract_vector_from_pairs(list(c("he","she"),c("man","woman"),c("him","her")))
+#'
+#' demo_vectors %>% closest_to(gender)
+#'
+extract_vector_from_pairs = function(matrix,pairs) {
+  if (!all(sapply(pairs,length)==2) || !all(is.character(unlist(pairs)))) {
+    stop("input must be a list of word vectors accessors; each vector must have two elements")
+  }
+
+  # Build each pair of words into two formula pairs.
+  # kludge onto an object.
+  pair_to_formula_pair = function(w1,w2) {
+    form = ~ "a" - "b"
+    form[[2]][[2]] = w1
+    form[[2]][[3]] = w2
+    form
+  }
+
+  expanded_pairs = pairs %>% purrr::map(function(l) {
+    a = l[1]; b = l[2]
+    c(pair_to_formula_pair(a,b),pair_to_formula_pair(b,a))
+  }) %>% purrr::flatten() %>%
+    head(57) %>%
+    extract_vectors(matrix, .)
+
+  vector = prcomp(expanded_pairs)$rotation[,1]
+
+  # The odd entries are in the order the user requested; check the orientation to align with that.
+  input_directionality = expanded_pairs[seq(1,nrow(expanded_pairs),by=2),]
+
+  average_similarity = cosineSimilarity(input_directionality,vector)
+  if (mean(average_similarity)>0) {
+    vector = -vector
+  }
+  return(vector)
+}
 
 #' Improve a vectorspace by removing common elements.
 #'
@@ -42,7 +104,7 @@ extract_vectors = function(vsm, ...) {
 #' @export
 #'
 #' @examples
-#'cosin
+#'
 #' closest_to(demo_vectors,"great")
 #' # stopwords like "and" and "very" are no longer top ten.
 #' # I don't know if this is really better, though.
@@ -92,7 +154,10 @@ sub_out_tree = function(tree, context) {
     }
   }
   if (is.character(tree)) {
-    return(context[rownames(context)==tree,])
+    matches = which(rownames(context)==tree)
+    if (length(matches)==0) {stop("'", formula, "' is not a valid word in the vectorspace.")}
+
+    return(context[matches,])
   }
   return(tree)
 }
@@ -119,7 +184,16 @@ sub_out_formula = function(formula,context) {
     formula[[2]] <- sub_out_tree(formula[[2]],context)
     return(eval(formula[[2]]))
   }
-  if (is.character(formula)) {return(context[rownames(context)==formula,])}
+  if (is.character(formula)) {
+    if (length(formula)==1) {
+      matches = which(rownames(context)==formula)
+      if (length(matches)==0) {stop("'", formula, "' is not a valid word in the vectorspace.")}
+      return(context[matches,])
+    } else {
+      v = context[rownames(context) %in% formula,]
+      return(new("VectorSpaceModel", (apply(v,2,mean))))
+    }
+  }
   return(formula)
 }
 
@@ -151,7 +225,7 @@ square_magnitudes = function(object) {
   if (class(object)=="VectorSpaceModel") {
       if (methods::.hasSlot(object, ".cache")) {
       if (is.null(object@.cache$magnitudes)) {
-        object@.cache$magnitudes = rowSums(object^2)
+        object@.cache$magnitudes = unname(rowSums(object^2))
       }
       return(object@.cache$magnitudes)
       } else {
@@ -227,36 +301,16 @@ setMethod("-",signature(e1="VectorSpaceModel",e2="VectorSpaceModel"),function(e1
 #' or to return a subset of one row for each asked for.
 #'
 #' @return A VectorSpaceModel of a single row.
-setMethod("[[","VectorSpaceModel",function(x,i,average=TRUE) {
+setMethod("[[","VectorSpaceModel",function(x, i, average = NULL) {
   # The wordvec class can extract a row from the matrix
   # by accessing the rownames. x[["king"]] gives the row
   # for which the rowname is "king"; x[[c("king","queen")]] gives
   # the midpoint of x[["king"]] and x[["queen"]], which can occasionally
   # be useful.
-  if(typeof(i)=="character") {
-    matching_rows = x[rownames(x) %in% i,]
-    if (average) {
-      val = matrix(
-              colMeans(matching_rows)
-              ,nrow=1
-              ,dimnames = list(
-                c(),colnames(x))
-            )
-    } else {
-      val=matching_rows
-      rownames(val) = rownames(x)[rownames(x) %in% i]
-    }
-
-  return(methods::new("VectorSpaceModel",val))
+  if (!is.null(average)) {stop("averaging is deprecated. For equivalent behavior to VSM[[list('good', 'bad'), average=T) use ")}
+  return (x %>% extract_vectors(i, labels = deparse(i)))
   }
-
-  else if (typeof(i)=="integer") {
-  return(x[i,])
-  } else {
-    stop("VectorSpaceModel objects are accessed by vectors of numbers or words")
-  }
-})
-
+)
 
 setMethod("show","VectorSpaceModel",function(object) {
   dims = dim(object)
@@ -268,9 +322,10 @@ setMethod("show","VectorSpaceModel",function(object) {
 #'
 #' Visualizing a model as a whole is sort of undefined. I think the
 #' sanest thing to do is reduce the full model down to two dimensions
-#' using T-SNE, which preserves some of the local clusters.
+#' using T-SNE, which preserves some of the local clusters, or "pca",
+#' which preserves the local geometry of a two-dimesnional slice.
 #'
-#' For individual subsections, it can make sense to do a principal components
+#' For individual subsections, it makes more sense to do a principal components
 #' plot of the space of just those letters. This is what happens if method
 #' is pca. On the full vocab, it's kind of a mess.
 #'
@@ -280,7 +335,7 @@ setMethod("show","VectorSpaceModel",function(object) {
 #' @param method The method to use for plotting. "pca" is principal components, "tsne" is t-sne
 #' @param ... Further arguments passed to the plotting method.
 #'
-#' @return The TSNE model (silently.)
+#' @return If method=='tsne', the TSNE model (silently.) Otherwise, nothing.
 #' @export
 setMethod("plot","VectorSpaceModel",function(x,method="pca",...) {
   if (method=="tsne") {
@@ -291,14 +346,22 @@ setMethod("plot","VectorSpaceModel",function(x,method="pca",...) {
     short = x[1:min(300,nrow(x)),]
     m = tsne::tsne(short,...)
     graphics::plot(m,type='n',main="A two dimensional reduction of the vector space model using t-SNE")
-    graphics::text(m,rownames(short),cex = ((400:1)/200)^(1/3))
+    graphics::text(m,rownames(short),cex = ((400:1)/200)^(1/3),...)
     rownames(m)=rownames(short)
     silent = m
   } else if (method=="pca") {
+    message(method)
     vectors = stats::predict(stats::prcomp({x %>% normalize_lengths()}@.Data))[,1:2]
     graphics::plot(vectors,type='n')
-    graphics::text(vectors,labels=rownames(vectors))
+    graphics::text(vectors,labels=rownames(vectors),...)
+  } else if (method=="mds") {
+    message(method)
+    distance = dist({x %>% normalize_lengths()}@.Data)
+    vectors = stats::cmdscale(distance)
+    graphics::plot(vectors,type='n')
+    graphics::text(vectors,labels=rownames(vectors),...)
   }
+
 })
 
 #' Convert to a Vector Space Model
@@ -311,6 +374,43 @@ as.VectorSpaceModel = function(matrix) {
   return(methods::new("VectorSpaceModel",matrix))
 }
 
+#' Write in word2vec text format
+#'
+#' @param model The wordVectors model you wish to save.
+#' @param filename The file to save the vectors to. I recommend ".vectors" or ".txt" as a suffix.
+#'
+#' @return Nothing
+#' @export
+#'
+#' @example
+#'
+#' \dontrun{
+#' write.txt.word2.vec(demo_vectors, file = "/tmp/vectors.txt")
+#' }
+#'
+write.txt.word2vec = function(model,filename) {
+  filehandle = file(filename,"wb")
+  dim = dim(model)
+  writeChar(as.character(dim[1]),filehandle,eos=NULL)
+  writeChar(" ",filehandle,eos=NULL)
+  writeChar(as.character(dim[2]),filehandle,eos=NULL)
+  writeChar("\n",filehandle,eos=NULL)
+  names = rownames(model)
+  # I just store the rownames outside the loop, here.
+  i = 1
+  names = rownames(model)
+  silent = apply(model,1,function(row) {
+    # EOS must be null for this to work properly, because, ridiculously,
+    # 'eos=NULL' is the command that tells R *not* to insert a null string
+    # after a character.
+    writeChar(paste0(names[i]," "),filehandle,eos=NULL)
+    text = paste(as.character(row),collapse=" ")
+    writeChar(paste(text,"\n"),filehandle,eos=NULL)
+    i <<- i+1
+  })
+  close(filehandle)
+}
+
 #' Read VectorSpaceModel
 #'
 #' Read a VectorSpaceModel from a file exported from word2vec or a similar output format.
@@ -319,6 +419,8 @@ as.VectorSpaceModel = function(matrix) {
 #' @param vectors The number of dimensions word2vec calculated. Imputed automatically if not specified.
 #' @param binary Read in the binary word2vec form. (Wraps `read.binary.vectors`) By default, function
 #' guesses based on file suffix.
+#' @param header_row Whether the first row of the file gives information about the rest. If FALSE,
+#' the number of dimensions is inferred from the first row. Useful in reading gloVe files.
 #' @param ... Further arguments passed to read.table or read.binary.vectors.
 #' Note that both accept 'nrows' as an argument. Word2vec produces
 #' by default frequency sorted output. Therefore 'read.vectors("file.bin", nrows=500)', for example,
@@ -327,7 +429,7 @@ as.VectorSpaceModel = function(matrix) {
 #' @export
 #' @return An matrixlike object of class `VectorSpaceModel`
 #'
-read.vectors <- function(filename,vectors=NULL,binary=NULL,...) {
+read.vectors <- function(filename,vectors=NULL,binary=NULL,header_row = TRUE,...) {
     if (is.null(binary)) {
         if(rev(strsplit(filename,"\\.")[[1]])[1] =="bin") {
             message("Filename ends with .bin, so reading in binary format")
@@ -337,18 +439,20 @@ read.vectors <- function(filename,vectors=NULL,binary=NULL,...) {
             message("Reading in plain-text format.")
         }
     }
-  
+
 
   if(binary) {
     return(read.binary.vectors(filename,...))
   }
   readr_wrapr = function(fin,nrows=Inf, ...) {
+    skip = 1
+    if (!header_row) {skip = 0}
     options(readr.num_columns = 0)
-    guess = readr::spec_delim(fin, delim = " ", skip = 1, guess_max = 20, col_names=FALSE, n_max = 10, escape_backslash = FALSE, quote="", comment="")
+    guess = readr::spec_delim(fin, delim = " ", skip = skip, guess_max = 20, col_names=FALSE, n_max = 10, escape_backslash = FALSE, quote="", comment="")
     names(guess$cols) = c("word", paste0("V", 1:(length(guess$cols)-1)))
     readr::read_delim(fin,
                       skip=1,n_max=nrows,quote="",escape_backslash = FALSE,
-                      escape_double = FALSE,comment = "", delim = " ", 
+                      escape_double = FALSE,comment = "", delim = " ",
                       col_types = guess, col_names = names(guess$cols))
   }
   vectors_matrix = readr_wrapr(filename,...)
@@ -725,9 +829,14 @@ distend = function(matrix,vector, multiplier) {
 #' @param matrix A matrix or VectorSpaceModel
 #' @param vector  A single vector
 #' of the same length as the VectorSpaceModel, or a string or a formula coercable to a vector in
-#' the context of the passed matrix. Alternatively, a list of vectors. 
+#' the context of the passed matrix. Alternatively, a list of vectors.
 #' @param n The number of closest words to include.
-#' @param merge.method 
+#' @param labels A vector of characters for identifying comparisons. Useful if passing multiple numeric arguments.
+#' @param merge.method If you ask for the top n words across multiple `vector` arguments, what does that mean?
+#' NULL means just use the top n for each requested vector; "magnitude" means use the L2 norm
+#' to get n words that have the largest total positive or negative similarity;
+#' "all" means use words that are in the top n for all the input vectors; "any"
+#' means use words that are in the top n for any of the input vectors.
 #'
 #' @return A sorted data.frame with columns for the words and their similarity
 #' to the target vector. (Or, if as_df==FALSE, a named vector of similarities.)
@@ -747,7 +856,6 @@ distend = function(matrix,vector, multiplier) {
 #' before any math happens.
 #'
 #' @examples
-#'
 #' # Synonyms and similar words
 #' closest_to(demo_vectors,demo_vectors[["good"]])
 #'
@@ -759,7 +867,7 @@ distend = function(matrix,vector, multiplier) {
 #'
 #' # You can also express more complicated formulas.
 #'
-#' closest_to(demo_vectors,"good")
+#' closest_to(demo_vectors,~ "math" + "physics")
 #'
 #' # Something close to the classic king:man::queen:woman;
 #' # What's the equivalent word for a female teacher that "guy" is for
@@ -767,14 +875,14 @@ distend = function(matrix,vector, multiplier) {
 #'
 #' closest_to(demo_vectors,~ "guy" - "man" + "woman")
 #'
-#' # Multiple arguments can be merged together to get the ten closest 
-#' # to either word 
-#' closest_to(demo_vectors,")
+#' # Multiple arguments can be merged together to get the ten closest
+#' # to either word
+#' closest_to(demo_vectors,vector = list("good","bad"))
 #'
 #' @export
-closest_to = function(matrix, vector, n=10, merge.method="any") {
+closest_to = function(matrix, vector, n=10, merge.method="none",labels=NULL) {
   if (!is.numeric(vector)) {
-    if (is.character(vector)) vector = as.list(vector) # 
+    if (is.character(vector)) vector = as.list(vector) #
     if (!is.list(vector)) vector = list(vector) # for single-length arguments (most common case)
     comp = matrix %>% extract_vectors(vector)
   } else {
@@ -783,40 +891,52 @@ closest_to = function(matrix, vector, n=10, merge.method="any") {
   # The actually wrapping.
   sims = cosineSimilarity(matrix,comp)
 
+  if (!is.null(labels)) {
+    colnames(sims) = labels
+  }
   # Top n shouldn't be greater than the vocab length.
   n = min(n,nrow(sims))
 
   # For sorting.
   ranks = apply(-sims,2,rank)
+
   if (merge.method=="none") {
     return_val = apply(sims,2,function(col) {
       o = order(-col);
       data.frame(word = names(col)[o[1:n]], similarity=col[o[1:n]],stringsAsFactors=FALSE)
-                 }) %>% 
+                 }) %>%
       do.call(rbind,.)
     return_val$comparison = gsub('"',"", rep(colnames(sims),each=n))
     rownames(return_val) = NULL
     return(return_val)
   }
-  
-  if (merge.method=="any") f = min
-  if (merge.method=="all") f = max
-  if (merge.method=="average") f = mean
-  scores = apply(ranks,1,f)
+
+  if (merge.method=="magnitude") {
+    weighted = apply(sims,1,function(row) {sum(row^2)})
+    scores = rank(-weighted)
+  }
+  else {
+    if (merge.method=="any") f = min
+    if (merge.method=="all") f = max
+    if (merge.method=="magnitude") f = function(x) {return(mean((x^2)))}
+    if (merge.method=="average") f = function(x) {return(mean(abs(x)))}
+    scores = apply(ranks,1,f)
+  }
   keeping = which(scores <= n)
   kept = sims[keeping,,drop=FALSE]
   return_val = data.frame(word = rownames(kept),
              similarity=as.vector(kept),
              stringsAsFactors = FALSE)
-  if (nrow(comp) > 1)
-    return_val$comparison = gsub('"',"", rep(colnames(kept),each=nrow(kept)))
 
-  
+  if (is.matrix(comp))
+    if (nrow(comp) > 1)
+      return_val$comparison = gsub('"',"", rep(colnames(kept),each=nrow(kept)))
+
+
   return_val = return_val[order(-return_val$similarity),]
   rownames(return_val) = NULL
   return_val
 }
-
 
 #' Nearest vectors to a word
 #'

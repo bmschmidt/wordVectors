@@ -18,9 +18,9 @@ test_that("character substitution works",
 
 test_that("addition works in substitutions",
           expect_equivalent(
-            demo_vectors %>% closest_to(~ "good" + "bad")
+            {demo_vectors %>% closest_to(~ "good" + "bad")}[,1:2]
             ,
-            demo_vectors %>% closest_to(demo_vectors[["good"]] + demo_vectors[["bad"]])
+            {demo_vectors %>% closest_to(demo_vectors[["good"]] + demo_vectors[["bad"]])}[,1:2]
           )
 )
 
@@ -32,9 +32,9 @@ test_that("addition provides correct results",
 
 test_that("single-argument negation works",
           expect_equivalent(
-            demo_vectors %>% closest_to(~ -("good"-"bad"))
+            demo_vectors %>% closest_to(~ -("good"-"bad")) %>% dplyr::pull(similarity)
             ,
-            demo_vectors %>% closest_to(~ "bad"-"good")
+            demo_vectors %>% closest_to(~ "bad"-"good") %>% dplyr::pull(similarity)
 
           ))
 
