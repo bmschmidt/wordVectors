@@ -15,15 +15,16 @@
 \item{...}{Further arguments passed to the plotting method.}
 }
 \value{
-The TSNE model (silently.)
+If method=='tsne', the TSNE model (silently.) Otherwise, nothing.
 }
 \description{
 Visualizing a model as a whole is sort of undefined. I think the
 sanest thing to do is reduce the full model down to two dimensions
-using T-SNE, which preserves some of the local clusters.
+using T-SNE, which preserves some of the local clusters, or "pca",
+which preserves the local geometry of a two-dimesnional slice.
 }
 \details{
-For individual subsections, it can make sense to do a principal components
+For individual subsections, it makes more sense to do a principal components
 plot of the space of just those letters. This is what happens if method
 is pca. On the full vocab, it's kind of a mess.
 

@@ -12,7 +12,7 @@ extract_vectors(vsm, ..., labels = NULL)
 \item{...}{Words or formulas to extract from. Alternatively, a single list
 of formulas.}
 
-\item{...}{Optionally, slabels to use for the vector space model: a character vector the same length
+\item{labels}{Optionally, labels to use for the vector space model: a character vector the same length
 as vectors to extract. This may be useful in programming contexts.}
 }
 \value{

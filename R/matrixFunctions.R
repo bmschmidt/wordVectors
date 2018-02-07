@@ -3,7 +3,7 @@
 #' @param vsm A VectorSpaceModel or matrix
 #' @param ... Words or formulas to extract from. Alternatively, a single list
 #' of formulas.
-#' @param ... Optionally, slabels to use for the vector space model: a character vector the same length
+#' @param labels Optionally, labels to use for the vector space model: a character vector the same length
 #' as vectors to extract. This may be useful in programming contexts.
 #' @return A Vector space model with the same number of rows as \code{...}
 #' @export
@@ -15,7 +15,7 @@
 #'
 extract_vectors = function(vsm, ..., labels = NULL) {
   targets = list(...)
-  if (is.list(targets[[1]])) {
+  if (is.list(targets[[1]]) || (is.character(targets[[1]]) && length(targets[[1]]) > 1)) {
     targets = targets[[1]]
     if (is.null(labels)) {
       labels = as.vector(lapply(targets,deparse))
@@ -104,7 +104,6 @@ extract_vector_from_pairs = function(matrix,pairs) {
 #' @export
 #'
 #' @examples
-#'
 #' closest_to(demo_vectors,"great")
 #' # stopwords like "and" and "very" are no longer top ten.
 #' # I don't know if this is really better, though.
@@ -307,8 +306,12 @@ setMethod("[[","VectorSpaceModel",function(x, i, average = NULL) {
   # for which the rowname is "king"; x[[c("king","queen")]] gives
   # the midpoint of x[["king"]] and x[["queen"]], which can occasionally
   # be useful.
-  if (!is.null(average)) {stop("averaging is deprecated. For equivalent behavior to VSM[[list('good', 'bad'), average=T) use ")}
-  return (x %>% extract_vectors(i, labels = deparse(i)))
+  if (!is.null(average)) {stop("averaging is deprecated. For equivalent behavior to VSM[[list('good', 'bad'), average=F) pass a list as the argument")}
+  if (is.character(i)) {
+    i = list(i)
+    return(extract_vectors(x, i, labs = paste(i, collapse = "+")))
+  }
+  return (x %>% extract_vectors(i))
   }
 )
 
@@ -317,6 +320,7 @@ setMethod("show","VectorSpaceModel",function(object) {
   cat("A VectorSpaceModel object of ",dims[1]," words and ", dims[2], " vectors\n")
   methods::show(unclass(object[1:min(nrow(object),10),1:min(ncol(object),6),drop=F]))
 })
+
 
 #' Plot a Vector Space Model.
 #'
@@ -381,12 +385,6 @@ as.VectorSpaceModel = function(matrix) {
 #'
 #' @return Nothing
 #' @export
-#'
-#' @example
-#'
-#' \dontrun{
-#' write.txt.word2.vec(demo_vectors, file = "/tmp/vectors.txt")
-#' }
 #'
 write.txt.word2vec = function(model,filename) {
   filehandle = file(filename,"wb")

@@ -46,3 +46,14 @@ test_that("list args passed to nearest_to produce two columns",
           )
 )
 
+test_that("c() operator joins vectors",
+          expect_equal(
+            demo_vectors %>% extract_vectors("good","bad"),
+            demo_vectors %>% extract_vectors(c("good","bad"))
+))
+
+test_that("list operator joins vectors",
+          expect_equal(
+            demo_vectors %>% extract_vectors("good","bad"),
+            demo_vectors %>% extract_vectors(c(~"good","bad"))
+          ))
