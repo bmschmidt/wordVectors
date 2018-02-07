@@ -1,7 +1,7 @@
 Package: wordVectors
 Type: Package
 Title: Tools for creating and analyzing vector-space models of texts
-Version: 2.0
+Version: 3.0
 Author: Ben Schmidt, Jian Li
 Maintainer: Ben Schmidt <bmschmidt@gmail.com>
 Description:
