@@ -98,7 +98,7 @@ This package bundles the ones I think are the most useful.
 Each takes a `VectorSpaceModel` as its first argument. Sometimes, it's appropriate for the VSM to be your entire data set; other times, it's sensible to limit it to just one or a few vectors. Where appropriate, the functions can also take vectors or matrices as inputs.
 
   * `cosineSimilarity(VSM_1,VSM_2)` calculates the cosine similarity of every vector in on vector space model to every vector in another. This is `n^2` complexity. With a vocabulary size of 20,000 or so, it can be reasonable to compare an entire set to itself; or you can compare a larger set to a smaller one to search for particular terms of interest. 
-  * `cosineDistance(VSM_1,VSM_2)` is the inverse of cosineSimilarity. It's not really a distance metric, but can be used as one for clustering and the like.
+  * `cosineDist(VSM_1,VSM_2)` is the inverse of cosineSimilarity. It's not really a distance metric, but can be used as one for clustering and the like.
   * `closest_to(VSM,vector,n)` wraps a particularly common use case for `cosineSimilarity`, of finding the top `n` terms in a `VectorSpaceModel` closest to term m
   * `project(VSM,vector)` takes a `VectorSpaceModel` and returns the portion parallel to the vector `vector`. 
   * `reject(VSM,vector)` is the inverse of `project`; it takes a `VectorSpaceModel` and returns the portion orthogonal to the vector `vector`. This makes it possible, for example, to collapse a vector space by removing certain distinctions of meaning.
