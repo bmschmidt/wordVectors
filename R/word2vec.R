@@ -142,9 +142,13 @@ prep_word2vec <- function(origin,destination,lowercase=F,
       tokenize_words(lowercase) %>%
       stringr::str_c(collapse = " ")
 
-    stopifnot(length(text) == 1)
-    readr::write_lines(text, file_out, append = TRUE)
-    return(TRUE)
+    if (length(text) == 1) {
+      readr::write_lines(text, file_out, append = TRUE)
+      return(TRUE)
+    } else {
+      message("Warning: No text to prep in ", file_in)
+      return(FALSE)
+    }
   }
 
 
