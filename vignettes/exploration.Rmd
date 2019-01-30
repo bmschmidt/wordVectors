@@ -64,9 +64,7 @@ demo_vectors %>% closest_to("bad")
 The tildes are necessary syntax where things get interesting--you can do **math** on these vectors. So if we want to find the words that are closest to the *combination* of "good" and "bad" (which is to say, words that get used in evaluation) we can write (see where the tilde is?):
 
 ```{r}
-
 demo_vectors %>% closest_to(~"good"+"bad")
-
 # The same thing could be written as:
 # demo_vectors %>% closest_to(demo_vectors[["good"]]+demo_vectors[["bad"]])
 ```
@@ -84,7 +82,6 @@ demo_vectors %>% closest_to(~"good" - "bad")
 > a vector that describes the difference between positive and negative.
 > Similarity to this vector means, technically, the portion of a words vectors whose
 > whose multidimensional path lies largely along the direction between the two words. 
-
 Again, you can easily switch the order to the opposite: here are a bunch of bad words:
 
 ```{r}
@@ -127,11 +124,9 @@ demo_vectors %>% closest_to(~ "guy" + ("she" - "he"))
 
 Principal components can let you plot a subset of these vectors to see how they relate. You can imagine an arrow from "he" to "she", from "guy" to "lady", and from "man" to "woman"; all run in roughly the same direction.
 
-```{r}
-
+```{r, fig.height = 7, fig.width = 7, fig.align = "center"}
 demo_vectors[[c("lady","woman","man","he","she","guy","man"), average=F]] %>% 
   plot(method="pca")
-
 ```
 
 These lists of ten words at a time are useful for interactive exploration, but sometimes we might want to say 'n=Inf' to return the full list. For instance, we can combine these two methods to look at positive and negative words used to evaluate teachers. 
@@ -141,10 +136,8 @@ First we build up three data_frames: first, a list of the 50 top evaluative word
 ```{r}
 top_evaluative_words = demo_vectors %>% 
    closest_to(~ "good"+"bad",n=75)
-
 goodness = demo_vectors %>% 
   closest_to(~ "good"-"bad",n=Inf) 
-
 femininity = demo_vectors %>% 
   closest_to(~ "she" - "he", n=Inf)
 ```
@@ -153,10 +146,9 @@ Then we can use tidyverse packages to join and plot these.
 An `inner_join` restricts us down to just those top 50 words, and ggplot
 can array the words on axes.
 
-```{r}
+```{r, fig.height = 7, fig.width = 7, fig.align = "center"}
 library(ggplot2)
 library(dplyr)
-
 top_evaluative_words %>%
   inner_join(goodness) %>%
   inner_join(femininity) %>%
@@ -165,4 +157,3 @@ top_evaluative_words %>%
                 y=`similarity to "good" - "bad"`,
                 label=word))
 ```
-
