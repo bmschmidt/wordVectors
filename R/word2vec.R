@@ -37,7 +37,7 @@
 ##' model = train_word2vec(system.file("examples", "rfaq.txt", package = "wordVectors"))
 ##' }
 train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,threads=1,window=12,
-                           classes=0,cbow=0,min_count=5,iter=5,force=F, negative_samples=5)
+                           classes=0,cbow=0,min_count=5,iter=5,force=F, negative_samples=5, show_by=NULL)
 {
   if (!file.exists(train_file)) stop("Can't find the training file!")
   if (file.exists(output_file) && !force) stop("The output file '",
@@ -75,7 +75,7 @@ train_word2vec <- function(train_file, output_file = "vectors.bin",vectors=100,t
             neg_samples=as.character(negative_samples)
   )
 
-  read.vectors(output_file)
+  read.vectors(output_file, show_by=show_by)
 }
 
 #' Prepare documents for word2Vec

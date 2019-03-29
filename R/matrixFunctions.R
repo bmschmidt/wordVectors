@@ -296,14 +296,14 @@ as.VectorSpaceModel = function(matrix) {
 #' @export
 #' @return An matrixlike object of class `VectorSpaceModel`
 #'
-read.vectors <- function(filename,vectors=guess_n_cols(),binary=NULL,...) {
+read.vectors <- function(filename,vectors=guess_n_cols(),binary=NULL,show_by=NULL,...) {
   if(rev(strsplit(filename,"\\.")[[1]])[1] =="bin" && is.null(binary)) {
     message("Filename ends with .bin, so reading in binary format")
     binary=TRUE
   }
 
   if(binary) {
-    return(read.binary.vectors(filename,...))
+    return(read.binary.vectors(filename,show_by=show_by,...))
   }
 
   # Figure out how many dimensions.
@@ -342,7 +342,7 @@ read.vectors <- function(filename,vectors=guess_n_cols(),binary=NULL,...) {
 #' @return A VectorSpaceModel object
 #' @export
 
-read.binary.vectors = function(filename,nrows=Inf,cols="All", rowname_list = NULL, rowname_regexp = NULL) {
+read.binary.vectors = function(filename,nrows=Inf,cols="All", rowname_list = NULL, rowname_regexp = NULL, show_by=NULL) {
   if (!is.null(rowname_list) && !is.null(rowname_regexp)) {stop("Specify a whitelist of names or a regular expression to be applied to all input, not both.")}
   a = file(filename,'rb')
   rows = ""
@@ -380,8 +380,18 @@ read.binary.vectors = function(filename,nrows=Inf,cols="All", rowname_list = NUL
     returned_columns = length(cols)
   }
 
+  progress <- show_by
   read_row = function(i) {
-    utils::setTxtProgressBar(pb,i)
+    progress_percent <- round(100*i/rows)
+    if(is.null(show_by)){
+      utils::setTxtProgressBar(pb,i)
+    } else{
+      if(progress_percent == progress || i == rows){
+        progress <<- progress + show_by
+        utils::setTxtProgressBar(pb,i)
+      }
+    }
+
     rowname=""
     mostRecent=""
     while(TRUE) {
