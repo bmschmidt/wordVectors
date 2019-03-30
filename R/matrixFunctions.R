@@ -288,6 +288,7 @@ as.VectorSpaceModel = function(matrix) {
 #' @param vectors The number of dimensions word2vec calculated. Imputed automatically if not specified.
 #' @param binary Read in the binary word2vec form. (Wraps `read.binary.vectors`) By default, function
 #' guesses based on file suffix.
+#' @param show_by Progress bar will show every this percentage
 #' @param ... Further arguments passed to read.table or read.binary.vectors.
 #' Note that both accept 'nrows' as an argument. Word2vec produces
 #' by default frequency sorted output. Therefore 'read.vectors("file.bin", nrows=500)', for example,
@@ -339,6 +340,7 @@ read.vectors <- function(filename,vectors=guess_n_cols(),binary=NULL,show_by=NUL
 #' all other rows will be skipped and only these read in.
 #' @param rowname_regexp A regular expression specifying a pattern for rows to read in. Row
 #' names matching that pattern will be included in the read; all others will be skipped.
+#' @param show_by Progress bar will show every this percentage
 #' @return A VectorSpaceModel object
 #' @export
 

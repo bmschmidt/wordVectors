@@ -26,6 +26,7 @@
 ##' @param force Whether to overwrite existing model files.
 ##' @param negative_samples Number of negative samples to take in skip-gram training. 0 means full sampling, while lower numbers
 ##' give faster training. For large corpora 2-5 may work; for smaller corpora, 5-15 is reasonable.
+##' @param show_by Progress bar will show every this percentage
 ##' @return A VectorSpaceModel object.
 ##' @author Jian Li <\email{rweibo@@sina.com}>, Ben Schmidt <\email{bmchmidt@@gmail.com}>
 ##' @references \url{https://code.google.com/p/word2vec/}
