@@ -4,7 +4,8 @@
 \alias{read.vectors}
 \title{Read VectorSpaceModel}
 \usage{
-read.vectors(filename, vectors = guess_n_cols(), binary = NULL, ...)
+read.vectors(filename, vectors = guess_n_cols(), binary = NULL,
+  show_by = NULL, ...)
 }
 \arguments{
 \item{filename}{The file to read in.}
@@ -13,6 +14,8 @@ read.vectors(filename, vectors = guess_n_cols(), binary = NULL, ...)
 
 \item{binary}{Read in the binary word2vec form. (Wraps `read.binary.vectors`) By default, function
 guesses based on file suffix.}
+
+\item{show_by}{Progress bar will show every this percentage}
 
 \item{...}{Further arguments passed to read.table or read.binary.vectors.
 Note that both accept 'nrows' as an argument. Word2vec produces

@@ -5,7 +5,7 @@
 \title{Read binary word2vec format files}
 \usage{
 read.binary.vectors(filename, nrows = Inf, cols = "All",
-  rowname_list = NULL, rowname_regexp = NULL)
+  rowname_list = NULL, rowname_regexp = NULL, show_by = NULL)
 }
 \arguments{
 \item{filename}{A file in the binary word2vec format to import.}
@@ -25,6 +25,8 @@ all other rows will be skipped and only these read in.}
 
 \item{rowname_regexp}{A regular expression specifying a pattern for rows to read in. Row
 names matching that pattern will be included in the read; all others will be skipped.}
+
+\item{show_by}{Progress bar will show every this percentage}
 }
 \value{
 A VectorSpaceModel object

@@ -6,7 +6,7 @@
 \usage{
 train_word2vec(train_file, output_file = "vectors.bin", vectors = 100,
   threads = 1, window = 12, classes = 0, cbow = 0, min_count = 5,
-  iter = 5, force = F, negative_samples = 5)
+  iter = 5, force = F, negative_samples = 5, show_by = NULL)
 }
 \arguments{
 \item{train_file}{Path of a single .txt file for training. Tokens are split on spaces.}
@@ -36,6 +36,8 @@ High values help reduce model size.}
 
 \item{negative_samples}{Number of negative samples to take in skip-gram training. 0 means full sampling, while lower numbers
 give faster training. For large corpora 2-5 may work; for smaller corpora, 5-15 is reasonable.}
+
+\item{show_by}{Progress bar will show every this percentage}
 }
 \value{
 A VectorSpaceModel object.

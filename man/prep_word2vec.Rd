@@ -4,7 +4,8 @@
 \alias{prep_word2vec}
 \title{Prepare documents for word2Vec}
 \usage{
-prep_word2vec(origin, destination, lowercase = F, bundle_ngrams = 1, ...)
+prep_word2vec(origin, destination, lowercase = F, bundle_ngrams = 1,
+  ...)
 }
 \arguments{
 \item{origin}{A text file or a directory of text files
