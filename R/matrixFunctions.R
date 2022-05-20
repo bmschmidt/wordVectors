@@ -117,7 +117,7 @@ setMethod("initialize", "VectorSpaceModel",
 #' @return A vector of the square magnitudes for each row
 #' @keywords internal
 square_magnitudes = function(object) {
-  if (class(object)=="VectorSpaceModel") {
+  if (class(object)[1]=="VectorSpaceModel") {
       if (methods::.hasSlot(object, ".cache")) {
       if (is.null(object@.cache$magnitudes)) {
         object@.cache$magnitudes = rowSums(object^2)
@@ -125,15 +125,15 @@ square_magnitudes = function(object) {
       return(object@.cache$magnitudes)
       } else {
         message("You seem to be using a VectorSpaceModel saved from an earlier version of this package.")
-        message("To turn on caching, which greatly speeds up queries, type")
+        message("To turn on caching on your model, which greatly speeds up queries, type")
         message("yourobjectname@.cache = new.env()")
+        message("(replacing 'yourobjectname' with your actual model name)")
         return(rowSums(object^2))
       }
   } else {
     return(rowSums(object^2))
   }
 }
-
 
 #' VectorSpaceModel indexing
 #'
